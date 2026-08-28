@@ -1,0 +1,106 @@
+package com.fon.rezervacija_sala.service;
+
+import com.fon.rezervacija_sala.dto.SalaDto;
+import com.fon.rezervacija_sala.dto.TipSaleDto;
+import com.fon.rezervacija_sala.entity.Sala;
+import com.fon.rezervacija_sala.entity.StatusSale;
+import com.fon.rezervacija_sala.entity.TipSale;
+import com.fon.rezervacija_sala.exception.ResursNijePronadjenException;
+import com.fon.rezervacija_sala.mapper.impl.SalaMapper;
+import com.fon.rezervacija_sala.repository.impl.SalaRepository;
+import com.fon.rezervacija_sala.repository.impl.TipSaleRepository;
+import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+@Service
+public class SalaService {
+
+    private static final Logger log = LoggerFactory.getLogger(SalaService.class);
+
+    private final SalaRepository sale;
+    private final TipSaleRepository tipoviSala;
+    private final SalaMapper mapper;
+
+    public SalaService(SalaRepository sale, TipSaleRepository tipoviSala, SalaMapper mapper) {
+        this.sale = sale;
+        this.tipoviSala = tipoviSala;
+        this.mapper = mapper;
+    }
+
+    public List<SalaDto> findAll() {
+        return mapper.toDtoList(sale.findAll());
+    }
+
+    public SalaDto findById(Long id) {
+        return mapper.toDto(pronadjiIliBaciGresku(id));
+    }
+
+    public List<SalaDto> findByTipSale(Long tipSaleId) {
+        return mapper.toDtoList(sale.findByTipSale(tipSaleId));
+    }
+
+    public SalaDto create(SalaDto dto) {
+        TipSale tipSale = pronadjiTipSaleIliBaciGresku(dto.getTipSale());
+
+        Sala s = mapper.toEntity(dto);
+        s.setId(null);
+        s.setTipSale(tipSale);
+        if (s.getStatus() == null) {
+            s.setStatus(StatusSale.SLOBODNA);
+        }
+        sale.save(s);
+
+        log.info("Kreirana sala (id: {}, naziv: {}, zgrada: {}).", s.getId(), s.getNaziv(), s.getZgrada());
+        return mapper.toDto(s);
+    }
+
+    public SalaDto update(Long id, SalaDto dto) {
+        Sala postojeca = pronadjiIliBaciGresku(id);
+        TipSale tipSale = pronadjiTipSaleIliBaciGresku(dto.getTipSale());
+
+        postojeca.setNaziv(dto.getNaziv());
+        postojeca.setZgrada(dto.getZgrada());
+        postojeca.setSprat(dto.getSprat());
+        postojeca.setKapacitet(dto.getKapacitet());
+        postojeca.setBrojRacunara(dto.getBrojRacunara());
+        postojeca.setTipSale(tipSale);
+        if (dto.getStatus() != null) {
+            postojeca.setStatus(dto.getStatus());
+        }
+
+        sale.save(postojeca);
+        log.info("Ažurirana sala (id: {}).", id);
+        return mapper.toDto(postojeca);
+    }
+
+    public SalaDto promeniStatus(Long id, StatusSale noviStatus) {
+        Sala s = pronadjiIliBaciGresku(id);
+        s.setStatus(noviStatus);
+        sale.save(s);
+        log.info("Promenjen status sale (id: {}) u {}.", id, noviStatus);
+        return mapper.toDto(s);
+    }
+
+    public void deleteById(Long id) {
+        pronadjiIliBaciGresku(id);
+        sale.deleteById(id);
+        log.info("Obrisana sala (id: {}).", id);
+    }
+
+    private Sala pronadjiIliBaciGresku(Long id) {
+        return sale.findById(id)
+                .orElseThrow(() -> new ResursNijePronadjenException("Sala sa id " + id + " ne postoji."));
+    }
+
+    private TipSale pronadjiTipSaleIliBaciGresku(TipSaleDto tipSaleDto) {
+        if (tipSaleDto == null || tipSaleDto.getId() == null) {
+            throw new ResursNijePronadjenException("Tip sale mora biti prosleđen.");
+        }
+        return tipoviSala.findById(tipSaleDto.getId())
+                .orElseThrow(() -> new ResursNijePronadjenException(
+                        "Tip sale sa id " + tipSaleDto.getId() + " ne postoji."));
+    }
+
+}
