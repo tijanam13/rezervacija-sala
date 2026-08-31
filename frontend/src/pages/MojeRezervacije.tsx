@@ -1,0 +1,373 @@
+import { useState, useEffect, useCallback } from "react";
+import { AlertCircle, Ban, ChevronLeft, ChevronRight } from "lucide-react";
+import { NavBar } from "@/components/layout/NavBar";
+import { DetaljiSvrhe } from "@/components/rezervacije/DetaljiSvrhe";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Red } from "@/components/common/Red";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  fetchMojeRezervacije,
+  otkaziRezervaciju,
+  otkaziStavku,
+  izvuciPorukuGreske,
+} from "@/lib/rezervacijaApi";
+import { getStatusStyle } from "@/lib/statusColors";
+import { nazivSvrhe, formatVreme, formatDatum } from "@/lib/svrhaHelpers";
+import type { RezervacijaDto } from "@/types";
+
+const VELICINA_STRANICE = 9;
+
+function vremeUDecimalni(vremeString: string): number {
+  const [satiStr, minutiStr] = vremeString.split(":");
+  return Number(satiStr) + Number(minutiStr) / 60;
+}
+
+export default function MojeRezervacije() {
+  const [stranica, setStranica] = useState(0);
+  const [ukupnoStranica, setUkupnoStranica] = useState(0);
+  const [rezervacije, setRezervacije] = useState<RezervacijaDto[]>([]);
+  const [ucitava, setUcitava] = useState(true);
+  const [greska, setGreska] = useState<string | null>(null);
+
+  const [izabrana, setIzabrana] = useState<RezervacijaDto | null>(null);
+
+  const [potvrdaZaOtkaz, setPotvrdaZaOtkaz] = useState<
+    { tip: "rezervacija"; id: number } | { tip: "stavka"; id: number } | null
+  >(null);
+  const [otkazivanjeUToku, setOtkazivanjeUToku] = useState(false);
+
+  const ucitajStranicu = useCallback(async (brojStranice: number) => {
+    setUcitava(true);
+    setGreska(null);
+    try {
+      const odgovor = await fetchMojeRezervacije(
+        brojStranice,
+        VELICINA_STRANICE,
+      );
+      setRezervacije(odgovor.sadrzaj);
+      setUkupnoStranica(odgovor.ukupnoStranica);
+    } catch (err) {
+      setGreska(izvuciPorukuGreske(err));
+    } finally {
+      setUcitava(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    ucitajStranicu(stranica);
+  }, [stranica, ucitajStranicu]);
+
+  async function potvrdiOtkazivanje() {
+    if (!potvrdaZaOtkaz) return;
+    setOtkazivanjeUToku(true);
+    setGreska(null);
+    try {
+      if (potvrdaZaOtkaz.tip === "rezervacija") {
+        await otkaziRezervaciju(potvrdaZaOtkaz.id);
+      } else {
+        await otkaziStavku(potvrdaZaOtkaz.id);
+      }
+      setPotvrdaZaOtkaz(null);
+      setIzabrana(null);
+      await ucitajStranicu(stranica);
+    } catch (err) {
+      setGreska(izvuciPorukuGreske(err));
+    } finally {
+      setOtkazivanjeUToku(false);
+    }
+  }
+
+  function mozeSeOtkazati(status: string | undefined): boolean {
+    return (
+      status === "NA_CEKANJU" ||
+      status === "ODOBRENA" ||
+      status === "DELIMICNO_ODOBRENA"
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <NavBar />
+
+      <div className="mx-auto max-w-5xl p-6">
+        <div className="mb-6">
+          <p className="text-lg font-medium text-fon-navy">Moje rezervacije</p>
+          <p className="text-sm text-gray-500">
+            Klikni na rezervaciju da vidiš sve detalje.
+          </p>
+        </div>
+
+        {greska && (
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-fon-coral/30 bg-fon-coral/10 p-3 text-sm text-fon-coral">
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
+            <span>{greska}</span>
+          </div>
+        )}
+
+        {ucitava ? (
+          <p className="py-10 text-center text-sm text-gray-500">
+            Učitavanje...
+          </p>
+        ) : rezervacije.length === 0 ? (
+          <p className="py-10 text-center text-sm text-gray-500">
+            Nemaš još nijednu rezervaciju.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {rezervacije.map((r) => {
+              const stilRez = getStatusStyle(r.status ?? "NA_CEKANJU");
+              return (
+                <button
+                  key={r.id}
+                  onClick={() => setIzabrana(r)}
+                  className="flex w-full items-center justify-between rounded-xl border border-fon-blue/20 bg-white p-4 text-left shadow-sm transition-colors hover:bg-fon-blue/5"
+                >
+                  <div>
+                    <p className="font-medium text-fon-navy">
+                      {nazivSvrhe(r.svrha)}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {r.stavke.length}{" "}
+                      {r.stavke.length === 1 ? "sala/termin" : "sale/termina"}
+                      {r.stavke[0] && (
+                        <> · {formatDatum(r.stavke[0].datumTermina)}</>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge className={`${stilRez.bg} ${stilRez.text} border-0`}>
+                      {stilRez.label}
+                    </Badge>
+                    <ChevronRight size={18} className="text-gray-400" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {ukupnoStranica > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-fon-blue/30 text-fon-blue hover:bg-fon-blue/10"
+              disabled={stranica === 0 || ucitava}
+              onClick={() => setStranica((s) => Math.max(0, s - 1))}
+            >
+              <ChevronLeft size={16} />
+            </Button>
+            <span className="text-sm text-gray-500">
+              Strana {stranica + 1} od {ukupnoStranica}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-fon-blue/30 text-fon-blue hover:bg-fon-blue/10"
+              disabled={stranica >= ukupnoStranica - 1 || ucitava}
+              onClick={() => setStranica((s) => s + 1)}
+            >
+              <ChevronRight size={16} />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <Dialog
+        open={izabrana !== null}
+        onOpenChange={(o) => !o && setIzabrana(null)}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto border-2 border-fon-navy bg-white sm:max-w-xl">
+          {izabrana && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl text-fon-navy">
+                  {nazivSvrhe(izabrana.svrha)}
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4 text-sm">
+                <div className="space-y-2 rounded-lg border border-fon-blue/20 bg-fon-blue/5 p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">Status rezervacije</span>
+                    <Badge
+                      className={`${getStatusStyle(izabrana.status ?? "NA_CEKANJU").bg} ${getStatusStyle(izabrana.status ?? "NA_CEKANJU").text} border-0`}
+                    >
+                      {getStatusStyle(izabrana.status ?? "NA_CEKANJU").label}
+                    </Badge>
+                  </div>
+                  {izabrana.id !== undefined && (
+                    <Red
+                      naziv="Broj rezervacije"
+                      vrednost={`#${izabrana.id}`}
+                    />
+                  )}
+                  {izabrana.datumKreiranja && (
+                    <Red
+                      naziv="Kreirana"
+                      vrednost={formatDatum(
+                        izabrana.datumKreiranja.slice(0, 10),
+                      )}
+                    />
+                  )}
+                  {izabrana.napomena && (
+                    <Red
+                      naziv="Napomena (cela rezervacija)"
+                      vrednost={izabrana.napomena}
+                    />
+                  )}
+                  {mozeSeOtkazati(izabrana.status) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="mt-1 w-full gap-1 border-fon-coral/30 text-fon-coral hover:bg-fon-coral/10"
+                      onClick={() =>
+                        setPotvrdaZaOtkaz({
+                          tip: "rezervacija",
+                          id: izabrana.id!,
+                        })
+                      }
+                    >
+                      <Ban size={14} /> Otkaži celu rezervaciju
+                    </Button>
+                  )}
+                </div>
+
+                <div className="rounded-lg border border-fon-blue/20 p-3">
+                  <p className="mb-2 font-medium text-fon-navy">
+                    Detalji svrhe
+                  </p>
+                  <DetaljiSvrhe svrha={izabrana.svrha} />
+                </div>
+
+                <div>
+                  <p className="mb-2 font-medium text-fon-navy">
+                    Sale i termini ({izabrana.stavke.length})
+                  </p>
+                  <div className="space-y-3">
+                    {izabrana.stavke.map((s) => {
+                      const stilStavke = getStatusStyle(
+                        s.statusStavke ?? "NA_CEKANJU",
+                      );
+                      return (
+                        <div
+                          key={s.id}
+                          className="space-y-2 rounded-lg border border-fon-blue/20 p-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-fon-dark">
+                              {s.sala.naziv}
+                            </span>
+                            <Badge
+                              className={`${stilStavke.bg} ${stilStavke.text} border-0`}
+                            >
+                              {stilStavke.label}
+                            </Badge>
+                          </div>
+                          <Red naziv="Zgrada" vrednost={s.sala.zgrada} />
+                          <Red
+                            naziv="Sprat"
+                            vrednost={
+                              s.sala.sprat === 0
+                                ? "Prizemlje"
+                                : `Sprat ${s.sala.sprat}`
+                            }
+                          />
+                          <Red
+                            naziv="Tip sale"
+                            vrednost={s.sala.tipSale.naziv}
+                          />
+                          <Red
+                            naziv="Kapacitet sale"
+                            vrednost={`${s.sala.kapacitet} mesta`}
+                          />
+                          {s.sala.brojRacunara > 0 && (
+                            <Red
+                              naziv="Broj računara"
+                              vrednost={String(s.sala.brojRacunara)}
+                            />
+                          )}
+                          <Red
+                            naziv="Datum"
+                            vrednost={formatDatum(s.datumTermina)}
+                          />
+                          <Red
+                            naziv="Vreme"
+                            vrednost={`${formatVreme(vremeUDecimalni(s.vremeOd))} - ${formatVreme(vremeUDecimalni(s.vremeDo))}`}
+                          />
+                          <Red
+                            naziv="Broj osoba"
+                            vrednost={String(s.brojOsoba)}
+                          />
+                          {s.opis && (
+                            <Red
+                              naziv="Napomena za ovu stavku"
+                              vrednost={s.opis}
+                            />
+                          )}
+                          {mozeSeOtkazati(s.statusStavke) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full gap-1 border-fon-coral/30 text-fon-coral hover:bg-fon-coral/10"
+                              onClick={() =>
+                                setPotvrdaZaOtkaz({ tip: "stavka", id: s.id! })
+                              }
+                            >
+                              <Ban size={14} /> Otkaži ovu stavku
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={potvrdaZaOtkaz !== null}
+        onOpenChange={(otvoreno) => !otvoreno && setPotvrdaZaOtkaz(null)}
+      >
+        <DialogContent className="border-2 border-fon-coral bg-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-fon-coral">
+              Potvrda otkazivanja
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-fon-dark">
+            {potvrdaZaOtkaz?.tip === "rezervacija"
+              ? "Da li si sigurna da želiš da otkažeš CELU rezervaciju? Ova radnja je trajna i ne može se poništiti."
+              : "Da li si sigurna da želiš da otkažeš ovu stavku (salu/termin)? Ova radnja je trajna i ne može se poništiti."}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setPotvrdaZaOtkaz(null)}
+              disabled={otkazivanjeUToku}
+            >
+              Odustani
+            </Button>
+            <Button
+              className="flex-1 bg-fon-coral text-white hover:bg-fon-coral/90"
+              onClick={potvrdiOtkazivanje}
+              disabled={otkazivanjeUToku}
+            >
+              {otkazivanjeUToku ? "Otkazivanje..." : "Da, otkaži"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
