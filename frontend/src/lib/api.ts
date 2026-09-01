@@ -1,4 +1,5 @@
 import axios from "axios";
+import { odjaviSe } from "@/lib/auth";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api",
@@ -17,8 +18,7 @@ api.interceptors.response.use(
   (error) => {
     const jeLoginZahtev = error.config?.url?.includes("/auth/login");
     if (error.response?.status === 401 && !jeLoginZahtev) {
-      localStorage.removeItem("token");
-      window.location.href = "/prijava";
+      odjaviSe("istekla-sesija");
     }
     return Promise.reject(error);
   },

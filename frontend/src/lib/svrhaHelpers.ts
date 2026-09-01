@@ -52,10 +52,6 @@ export function bezDonjeCrte(vrednost: string): string {
   return vrednost.replaceAll("_", " ");
 }
 
-export function vremeURedMreze(vreme: number, pocetniSat: number): number {
-  return 2 + (vreme - pocetniSat);
-}
-
 export function vremeUDecimalni(vremeString: string): number {
   const [satiStr, minutiStr] = vremeString.split(":");
   return Number(satiStr) + Number(minutiStr) / 60;

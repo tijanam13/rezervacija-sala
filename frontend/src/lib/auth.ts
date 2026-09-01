@@ -35,8 +35,13 @@ export function jeKoordinator(): boolean {
   return imaUlogu("KOORDINATOR");
 }
 
-export function odjaviSe() {
+export function jeAdministracija(): boolean {
+  return jeKoordinator() || jeAdmin();
+}
+
+export function odjaviSe(razlog?: "istekla-sesija") {
   localStorage.removeItem(KLJUC_TOKEN);
   localStorage.removeItem(KLJUC_KORISNIK);
-  window.location.href = "/prijava";
+  window.location.href =
+    razlog === "istekla-sesija" ? "/prijava?istekla=1" : "/prijava";
 }

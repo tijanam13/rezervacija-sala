@@ -2,13 +2,16 @@ package com.fon.rezervacija_sala.service;
 
 import com.fon.rezervacija_sala.dto.ZvanjeDto;
 import com.fon.rezervacija_sala.entity.Zvanje;
+import com.fon.rezervacija_sala.exception.BrisanjeNijeMoguceException;
 import com.fon.rezervacija_sala.exception.ResursNijePronadjenException;
 import com.fon.rezervacija_sala.mapper.impl.ZvanjeMapper;
+import com.fon.rezervacija_sala.repository.impl.PredavacRepository;
 import com.fon.rezervacija_sala.repository.impl.ZvanjeRepository;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ZvanjeService {
@@ -16,10 +19,12 @@ public class ZvanjeService {
     private static final Logger log = LoggerFactory.getLogger(ZvanjeService.class);
 
     private final ZvanjeRepository zvanja;
+    private final PredavacRepository predavci;
     private final ZvanjeMapper mapper;
 
-    public ZvanjeService(ZvanjeRepository zvanja, ZvanjeMapper mapper) {
+    public ZvanjeService(ZvanjeRepository zvanja, PredavacRepository predavci, ZvanjeMapper mapper) {
         this.zvanja = zvanja;
+        this.predavci = predavci;
         this.mapper = mapper;
     }
 
@@ -27,10 +32,7 @@ public class ZvanjeService {
         return mapper.toDtoList(zvanja.findAll());
     }
 
-    public ZvanjeDto findById(Long id) {
-        return mapper.toDto(pronadjiIliBaciGresku(id));
-    }
-
+    @Transactional
     public ZvanjeDto create(ZvanjeDto dto) {
         Zvanje z = mapper.toEntity(dto);
         z.setId(null);
@@ -39,6 +41,7 @@ public class ZvanjeService {
         return mapper.toDto(z);
     }
 
+    @Transactional
     public ZvanjeDto update(Long id, ZvanjeDto dto) {
         Zvanje postojece = pronadjiIliBaciGresku(id);
         postojece.setNaziv(dto.getNaziv());
@@ -48,8 +51,17 @@ public class ZvanjeService {
         return mapper.toDto(postojece);
     }
 
+    @Transactional
     public void deleteById(Long id) {
-        pronadjiIliBaciGresku(id);
+        Zvanje z = pronadjiIliBaciGresku(id);
+
+        long brojPredavaca = predavci.brojPredavacaZaZvanje(id);
+        if (brojPredavaca > 0) {
+            throw new BrisanjeNijeMoguceException(
+                    "Zvanje \"" + z.getNaziv() + "\" se ne može obrisati, vezano je za "
+                    + brojPredavaca + " predavača.");
+        }
+
         zvanja.deleteById(id);
         log.info("Obrisano zvanje (id: {}).", id);
     }

@@ -10,6 +10,7 @@ export interface SalaInfo {
 
 export interface TerminPodaci {
   id: number;
+  rezervacijaId?: number;
   salaNaziv: string;
   datum: string;
   vremeOd: number;
@@ -17,6 +18,7 @@ export interface TerminPodaci {
   status: StatusStavke;
   brojOsoba: number;
   opis?: string;
+  napomena?: string;
   korisnikImePrezime: string;
   svrha: SvrhaRezervacijeDto;
 }

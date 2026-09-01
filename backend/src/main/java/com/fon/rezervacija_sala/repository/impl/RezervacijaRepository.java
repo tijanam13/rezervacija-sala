@@ -2,6 +2,7 @@ package com.fon.rezervacija_sala.repository.impl;
 
 import com.fon.rezervacija_sala.entity.Rezervacija;
 import com.fon.rezervacija_sala.entity.StatusRezervacije;
+import com.fon.rezervacija_sala.entity.StavkaRezervacije;
 import com.fon.rezervacija_sala.repository.AppRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -64,17 +65,6 @@ public class RezervacijaRepository implements AppRepository<Rezervacija, Long> {
         }
     }
 
-    public List<Rezervacija> findByKorisnikId(Long korisnikId) {
-        return entityManager.createQuery(
-                "SELECT DISTINCT r FROM Rezervacija r "
-                + "LEFT JOIN FETCH r.stavke st "
-                + "LEFT JOIN FETCH st.sala sa "
-                + "LEFT JOIN FETCH sa.tipSale "
-                + "WHERE r.korisnik.id = :korisnikId", Rezervacija.class)
-                .setParameter("korisnikId", korisnikId)
-                .getResultList();
-    }
-
     public List<Rezervacija> findByStatus(StatusRezervacije status) {
         return entityManager.createQuery(
                 "SELECT DISTINCT r FROM Rezervacija r "
@@ -110,9 +100,36 @@ public class RezervacijaRepository implements AppRepository<Rezervacija, Long> {
         return query.getSingleResult().intValue();
     }
 
+    public List<StavkaRezervacije> pronadjiPreklapajuceStavke(Long salaId, LocalDate datum,
+            LocalTime vremeOd, LocalTime vremeDo, Long iskljuciStavkuId) {
+
+        String jpql = "SELECT st FROM StavkaRezervacije st "
+                + "JOIN FETCH st.rezervacija r "
+                + "JOIN FETCH r.svrha "
+                + "WHERE st.sala.id = :salaId "
+                + "AND st.datumTermina = :datum "
+                + "AND st.statusStavke NOT IN (com.fon.rezervacija_sala.entity.StatusStavke.OTKAZANA, "
+                + "com.fon.rezervacija_sala.entity.StatusStavke.ODBIJENA) "
+                + "AND st.vremeOd < :vremeDo AND st.vremeDo > :vremeOd"
+                + (iskljuciStavkuId != null ? " AND st.id <> :iskljuciStavkuId" : "");
+
+        TypedQuery<StavkaRezervacije> query = entityManager.createQuery(jpql, StavkaRezervacije.class)
+                .setParameter("salaId", salaId)
+                .setParameter("datum", datum)
+                .setParameter("vremeOd", vremeOd)
+                .setParameter("vremeDo", vremeDo);
+
+        if (iskljuciStavkuId != null) {
+            query.setParameter("iskljuciStavkuId", iskljuciStavkuId);
+        }
+
+        return query.getResultList();
+    }
+
     public List<Rezervacija> findAllPaged(int stranica, int velicina) {
         List<Long> ids = entityManager.createQuery(
-                "SELECT r.idRezervacije FROM Rezervacija r ORDER BY r.datumKreiranja DESC", Long.class)
+                "SELECT r.idRezervacije FROM Rezervacija r JOIN r.stavke st "
+                + "GROUP BY r.idRezervacije ORDER BY MIN(st.datumTermina) ASC", Long.class)
                 .setFirstResult(stranica * velicina)
                 .setMaxResults(velicina)
                 .getResultList();
@@ -125,8 +142,8 @@ public class RezervacijaRepository implements AppRepository<Rezervacija, Long> {
 
     public List<Rezervacija> findByStatusPaged(StatusRezervacije status, int stranica, int velicina) {
         List<Long> ids = entityManager.createQuery(
-                "SELECT r.idRezervacije FROM Rezervacija r WHERE r.status = :status "
-                + "ORDER BY r.datumKreiranja DESC", Long.class)
+                "SELECT r.idRezervacije FROM Rezervacija r JOIN r.stavke st WHERE r.status = :status "
+                + "GROUP BY r.idRezervacije ORDER BY MIN(st.datumTermina) ASC", Long.class)
                 .setParameter("status", status)
                 .setFirstResult(stranica * velicina)
                 .setMaxResults(velicina)

@@ -23,7 +23,8 @@ public abstract class Zaposleni {
     @Column(length = 50)
     private String brojRadneKnjizice;
 
-    public Zaposleni() {
+    @Column(length = 150)
+    private String poslovniEmail;    public Zaposleni() {
     }
 
     public Zaposleni(Long id) {
@@ -76,6 +77,14 @@ public abstract class Zaposleni {
 
     public void setBrojRadneKnjizice(String brojRadneKnjizice) {
         this.brojRadneKnjizice = brojRadneKnjizice;
+    }
+
+    public String getPoslovniEmail() {
+        return poslovniEmail;
+    }
+
+    public void setPoslovniEmail(String poslovniEmail) {
+        this.poslovniEmail = poslovniEmail;
     }
 
 }

@@ -29,11 +29,6 @@ public class ZvanjeController {
         return zvanjeService.findAll();
     }
 
-    @GetMapping("/{id}")
-    public ZvanjeDto findById(@PathVariable Long id) {
-        return zvanjeService.findById(id);
-    }
-
     @PostMapping
     public ResponseEntity<ZvanjeDto> create(@Valid @RequestBody ZvanjeDto dto) {
         ZvanjeDto kreirano = zvanjeService.create(dto);

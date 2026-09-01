@@ -5,5 +5,6 @@ public enum StatusRezervacije {
     ODOBRENA,
     DELIMICNO_ODOBRENA,
     ODBIJENA,
-    OTKAZANA
+    OTKAZANA,
+    ISTEKLA
 }

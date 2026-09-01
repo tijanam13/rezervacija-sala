@@ -29,11 +29,6 @@ public class SluzbaController {
         return sluzbaService.findAll();
     }
 
-    @GetMapping("/{id}")
-    public SluzbaDto findById(@PathVariable Long id) {
-        return sluzbaService.findById(id);
-    }
-
     @PostMapping
     public ResponseEntity<SluzbaDto> create(@Valid @RequestBody SluzbaDto dto) {
         SluzbaDto kreirana = sluzbaService.create(dto);

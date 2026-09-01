@@ -5,14 +5,17 @@ import com.fon.rezervacija_sala.dto.SluzbenikDto;
 import com.fon.rezervacija_sala.entity.Sluzba;
 import com.fon.rezervacija_sala.entity.Sluzbenik;
 import com.fon.rezervacija_sala.exception.NevalidanZahtevException;
+import com.fon.rezervacija_sala.exception.BrisanjeNijeMoguceException;
 import com.fon.rezervacija_sala.exception.ResursNijePronadjenException;
 import com.fon.rezervacija_sala.mapper.impl.SluzbenikMapper;
+import com.fon.rezervacija_sala.repository.impl.KorisnikRepository;
 import com.fon.rezervacija_sala.repository.impl.SluzbaRepository;
 import com.fon.rezervacija_sala.repository.impl.SluzbenikRepository;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SluzbenikService {
@@ -21,11 +24,14 @@ public class SluzbenikService {
 
     private final SluzbenikRepository sluzbenici;
     private final SluzbaRepository sluzbe;
+    private final KorisnikRepository korisnici;
     private final SluzbenikMapper mapper;
 
-    public SluzbenikService(SluzbenikRepository sluzbenici, SluzbaRepository sluzbe, SluzbenikMapper mapper) {
+    public SluzbenikService(SluzbenikRepository sluzbenici, SluzbaRepository sluzbe,
+            KorisnikRepository korisnici, SluzbenikMapper mapper) {
         this.sluzbenici = sluzbenici;
         this.sluzbe = sluzbe;
+        this.korisnici = korisnici;
         this.mapper = mapper;
     }
 
@@ -33,14 +39,25 @@ public class SluzbenikService {
         return mapper.toDtoList(sluzbenici.findAll());
     }
 
-    public SluzbenikDto findById(Long id) {
-        return mapper.toDto(pronadjiIliBaciGresku(id));
+    @Transactional
+    public SluzbenikDto create(SluzbenikDto dto) {
+        Sluzba sluzba = pronadjiSluzbuIliBaciGresku(dto.getSluzba());
+
+        Sluzbenik s = new Sluzbenik();
+        s.setIme(dto.getIme());
+        s.setPrezime(dto.getPrezime());
+        s.setBrojTelefona(dto.getBrojTelefona());
+        s.setBrojRadneKnjizice(dto.getBrojRadneKnjizice());
+        s.setPoslovniEmail(dto.getPoslovniEmail());
+        s.setPozicija(dto.getPozicija());
+        s.setSluzba(sluzba);
+
+        sluzbenici.save(s);
+        log.info("Kreiran novi profil Službenika (id: {}), bez naloga za prijavu.", s.getId());
+        return mapper.toDto(s);
     }
 
-    public List<SluzbenikDto> findBySluzba(Long sluzbaId) {
-        return mapper.toDtoList(sluzbenici.findBySluzba(sluzbaId));
-    }
-
+    @Transactional
     public SluzbenikDto update(Long id, SluzbenikDto dto) {
         Sluzbenik postojeci = pronadjiIliBaciGresku(id);
         Sluzba sluzba = pronadjiSluzbuIliBaciGresku(dto.getSluzba());
@@ -49,6 +66,7 @@ public class SluzbenikService {
         postojeci.setPrezime(dto.getPrezime());
         postojeci.setBrojTelefona(dto.getBrojTelefona());
         postojeci.setBrojRadneKnjizice(dto.getBrojRadneKnjizice());
+        postojeci.setPoslovniEmail(dto.getPoslovniEmail());
         postojeci.setPozicija(dto.getPozicija());
         postojeci.setSluzba(sluzba);
 
@@ -57,8 +75,17 @@ public class SluzbenikService {
         return mapper.toDto(postojeci);
     }
 
+    @Transactional
     public void deleteById(Long id) {
         pronadjiIliBaciGresku(id);
+
+        if (korisnici.findByZaposleniId(id).isPresent()) {
+            throw new BrisanjeNijeMoguceException(
+                    "Službenik (id: " + id + ") ima povezan korisnički nalog za prijavu. "
+                    + "Nalog se ne može obrisati, pa se ni ovaj profil ne može obrisati. "
+                    + "Nalog se može samo blokirati.");
+        }
+
         sluzbenici.deleteById(id);
         log.info("Obrisan profil Službenika (id: {}).", id);
     }

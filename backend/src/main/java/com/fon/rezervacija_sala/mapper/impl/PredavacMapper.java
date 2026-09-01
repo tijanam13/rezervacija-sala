@@ -23,7 +23,7 @@ public class PredavacMapper implements DtoEntityMapper<PredavacDto, Predavac> {
         if (e == null) {
             return null;
         }
-        return new PredavacDto(
+        PredavacDto dto = new PredavacDto(
                 e.getId(),
                 e.getIme(),
                 e.getPrezime(),
@@ -34,6 +34,8 @@ public class PredavacMapper implements DtoEntityMapper<PredavacDto, Predavac> {
                 katedraMapper.toDto(e.getKatedra()),
                 zvanjeMapper.toDto(e.getZvanje())
         );
+        dto.setPoslovniEmail(e.getPoslovniEmail());
+        return dto;
     }
 
     @Override
@@ -55,6 +57,7 @@ public class PredavacMapper implements DtoEntityMapper<PredavacDto, Predavac> {
         p.setPrezime(t.getPrezime());
         p.setBrojTelefona(t.getBrojTelefona());
         p.setBrojRadneKnjizice(t.getBrojRadneKnjizice());
+        p.setPoslovniEmail(t.getPoslovniEmail());
         p.setTitula(t.getTitula());
         p.setTerminKonsultacija(t.getTerminKonsultacija());
         p.setKatedra(katedraRef);

@@ -9,6 +9,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TipSaleService {
@@ -27,10 +28,7 @@ public class TipSaleService {
         return mapper.toDtoList(tipoviSala.findAll());
     }
 
-    public TipSaleDto findById(Long id) {
-        return mapper.toDto(pronadjiIliBaciGresku(id));
-    }
-
+    @Transactional
     public TipSaleDto create(TipSaleDto dto) {
         TipSale t = mapper.toEntity(dto);
         t.setId(null);
@@ -39,6 +37,7 @@ public class TipSaleService {
         return mapper.toDto(t);
     }
 
+    @Transactional
     public TipSaleDto update(Long id, TipSaleDto dto) {
         TipSale postojeci = pronadjiIliBaciGresku(id);
         postojeci.setNaziv(dto.getNaziv());
@@ -48,6 +47,7 @@ public class TipSaleService {
         return mapper.toDto(postojeci);
     }
 
+    @Transactional
     public void deleteById(Long id) {
         pronadjiIliBaciGresku(id);
         tipoviSala.deleteById(id);

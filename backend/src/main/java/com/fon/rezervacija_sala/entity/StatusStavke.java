@@ -4,5 +4,6 @@ public enum StatusStavke {
     NA_CEKANJU,
     ODOBRENA,
     ODBIJENA,
-    OTKAZANA
+    OTKAZANA,
+    ISTEKLA
 }

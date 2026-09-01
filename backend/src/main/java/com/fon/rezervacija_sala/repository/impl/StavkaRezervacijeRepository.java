@@ -71,4 +71,21 @@ public class StavkaRezervacijeRepository implements AppRepository<StavkaRezervac
                 .getResultList();
     }
 
+    public List<StavkaRezervacije> findIstekleNaCekanju(LocalDate danas) {
+        return entityManager.createQuery(
+                "SELECT st FROM StavkaRezervacije st "
+                + "JOIN FETCH st.rezervacija "
+                + "WHERE st.statusStavke = com.fon.rezervacija_sala.entity.StatusStavke.NA_CEKANJU "
+                + "AND st.datumTermina < :danas", StavkaRezervacije.class)
+                .setParameter("danas", danas)
+                .getResultList();
+    }
+
+    public long brojStavkiZaSalu(Long salaId) {
+        return entityManager.createQuery(
+                "SELECT COUNT(st) FROM StavkaRezervacije st WHERE st.sala.id = :salaId", Long.class)
+                .setParameter("salaId", salaId)
+                .getSingleResult();
+    }
+
 }

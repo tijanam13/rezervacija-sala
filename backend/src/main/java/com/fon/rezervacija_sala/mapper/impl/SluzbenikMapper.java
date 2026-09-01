@@ -20,7 +20,7 @@ public class SluzbenikMapper implements DtoEntityMapper<SluzbenikDto, Sluzbenik>
         if (e == null) {
             return null;
         }
-        return new SluzbenikDto(
+        SluzbenikDto dto = new SluzbenikDto(
                 e.getId(),
                 e.getIme(),
                 e.getPrezime(),
@@ -29,6 +29,8 @@ public class SluzbenikMapper implements DtoEntityMapper<SluzbenikDto, Sluzbenik>
                 e.getPozicija(),
                 sluzbaMapper.toDto(e.getSluzba())
         );
+        dto.setPoslovniEmail(e.getPoslovniEmail());
+        return dto;
     }
 
     @Override
@@ -47,6 +49,7 @@ public class SluzbenikMapper implements DtoEntityMapper<SluzbenikDto, Sluzbenik>
         s.setPrezime(t.getPrezime());
         s.setBrojTelefona(t.getBrojTelefona());
         s.setBrojRadneKnjizice(t.getBrojRadneKnjizice());
+        s.setPoslovniEmail(t.getPoslovniEmail());
         s.setPozicija(t.getPozicija());
         s.setSluzba(sluzbaRef);
         return s;

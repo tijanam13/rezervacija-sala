@@ -12,6 +12,9 @@ public class Sala {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
  
+    @Version
+    private Long verzija;
+ 
     @Column(nullable = false, length = 100)
     private String naziv;
  
@@ -60,6 +63,14 @@ public class Sala {
  
     public void setId(Long id) {
         this.id = id;
+    }
+ 
+    public Long getVerzija() {
+        return verzija;
+    }
+
+    public void setVerzija(Long verzija) {
+        this.verzija = verzija;
     }
  
     public String getNaziv() {

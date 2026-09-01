@@ -53,13 +53,11 @@ public class SluzbenikRepository implements AppRepository<Sluzbenik, Long> {
         }
     }
 
-    public List<Sluzbenik> findBySluzba(Long sluzbaId) {
+    public long brojSluzbenikaZaSluzbu(Long sluzbaId) {
         return entityManager.createQuery(
-                "SELECT s FROM Sluzbenik s "
-                + "LEFT JOIN FETCH s.sluzba sl "
-                + "WHERE sl.id = :sluzbaId", Sluzbenik.class)
+                "SELECT COUNT(s) FROM Sluzbenik s WHERE s.sluzba.id = :sluzbaId", Long.class)
                 .setParameter("sluzbaId", sluzbaId)
-                .getResultList();
+                .getSingleResult();
     }
 
 }

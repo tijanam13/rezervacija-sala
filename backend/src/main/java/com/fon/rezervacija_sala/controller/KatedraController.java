@@ -29,11 +29,6 @@ public class KatedraController {
         return katedraService.findAll();
     }
 
-    @GetMapping("/{id}")
-    public KatedraDto findById(@PathVariable Long id) {
-        return katedraService.findById(id);
-    }
-
     @PostMapping
     public ResponseEntity<KatedraDto> create(@Valid @RequestBody KatedraDto dto) {
         KatedraDto kreirana = katedraService.create(dto);

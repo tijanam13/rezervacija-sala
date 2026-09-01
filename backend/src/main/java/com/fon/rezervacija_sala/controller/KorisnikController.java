@@ -33,11 +33,6 @@ public class KorisnikController {
         return korisnikService.findAll(stranica, velicina, pretraga);
     }
 
-    @GetMapping("/{id}")
-    public KorisnikDto findById(@PathVariable Long id) {
-        return korisnikService.findById(id);
-    }
-
     @PatchMapping("/{id}/status")
     public KorisnikDto promeniStatus(@PathVariable Long id, @RequestBody StatusNaloga noviStatus) {
         return korisnikService.promeniStatus(id, noviStatus);

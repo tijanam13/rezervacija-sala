@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class KorisnikService {
@@ -41,10 +42,6 @@ public class KorisnikService {
         return new StranicaDto<>(sadrzaj, stranica, velicina, ukupno);
     }
 
-    public KorisnikDto findById(Long id) {
-        return mapper.toDto(pronadjiIliBaciGresku(id));
-    }
-
     public KorisnikDto mojProfil() {
         return mapper.toDto(trenutniKorisnik());
     }
@@ -62,6 +59,7 @@ public class KorisnikService {
                         "Korisnik sa email adresom " + email + " nije pronađen."));
     }
 
+    @Transactional
     public KorisnikDto promeniStatus(Long id, StatusNaloga noviStatus) {
         if (noviStatus == null) {
             throw new NevalidanZahtevException("Novi status naloga je obavezan.");
@@ -72,6 +70,11 @@ public class KorisnikService {
         }
 
         Korisnik k = pronadjiIliBaciGresku(id);
+
+        if (noviStatus == StatusNaloga.BLOKIRAN && id.equals(trenutniKorisnik().getId())) {
+            throw new NevalidanZahtevException(
+                    "Ne možete sami sebe blokirati.");
+        }
 
         if (noviStatus != StatusNaloga.AKTIVAN && k.imaUlogu(NazivUloge.ADMIN)) {
             proveriDaNijePoslednjiAdmin(k);
@@ -84,19 +87,17 @@ public class KorisnikService {
         return mapper.toDto(k);
     }
 
+    @Transactional
     public KorisnikDto dodeliUlogu(Long korisnikId, NazivUloge naziv) {
         Korisnik k = pronadjiIliBaciGresku(korisnikId);
-
-        if (naziv == NazivUloge.KOORDINATOR && k.imaUlogu(NazivUloge.ADMIN)) {
-            throw new NevalidanZahtevException(
-                    "Korisnik (id: " + korisnikId + ") već ima ulogu ADMIN, koja obuhvata sve privilegije "
-                    + "koordinatora - dodatna uloga KOORDINATOR nije potrebna.");
-        }
 
         Uloga uloga = pronadjiUloguIliBaciGresku(naziv);
 
         if (naziv == NazivUloge.ADMIN) {
             k.getUloge().removeIf(u -> u.getNaziv() == NazivUloge.KOORDINATOR);
+        } else if (naziv == NazivUloge.KOORDINATOR && k.imaUlogu(NazivUloge.ADMIN)) {
+            proveriDaNijePoslednjiAdmin(k);
+            k.getUloge().removeIf(u -> u.getNaziv() == NazivUloge.ADMIN);
         }
 
         if (!k.imaUlogu(naziv)) {
@@ -110,8 +111,14 @@ public class KorisnikService {
         return mapper.toDto(k);
     }
 
+    @Transactional
     public KorisnikDto oduzmiUlogu(Long korisnikId, NazivUloge naziv) {
         Korisnik k = pronadjiIliBaciGresku(korisnikId);
+
+        if (naziv == NazivUloge.ADMIN && korisnikId.equals(trenutniKorisnik().getId())) {
+            throw new NevalidanZahtevException(
+                    "Ne možete sami sebi oduzeti ulogu ADMIN.");
+        }
 
         if (naziv == NazivUloge.ADMIN && k.imaUlogu(NazivUloge.ADMIN)) {
             proveriDaNijePoslednjiAdmin(k);

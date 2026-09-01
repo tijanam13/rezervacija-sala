@@ -66,17 +66,18 @@ public class SecurityConfig {
 
                 .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasAuthority("ROLE_ADMIN")
   
                 .requestMatchers(HttpMethod.GET, "/api/katedra/**", "/api/zvanje/**", "/api/sluzba/**").permitAll()
 
                 .requestMatchers(HttpMethod.POST, "/api/rezervacija").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/rezervacija/korisnik/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/rezervacija/zauzetost").authenticated()
 
                 .requestMatchers(HttpMethod.GET, "/api/rezervacija").hasAnyAuthority("ROLE_KOORDINATOR", "ROLE_ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/api/rezervacija/*/status").hasAnyAuthority("ROLE_KOORDINATOR", "ROLE_ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/rezervacija/*/odbij-sa-razlogom").hasAnyAuthority("ROLE_KOORDINATOR", "ROLE_ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/api/rezervacija/stavka/*/status").hasAnyAuthority("ROLE_KOORDINATOR", "ROLE_ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/rezervacija/stavka/*/odbij-sa-razlogom").hasAnyAuthority("ROLE_KOORDINATOR", "ROLE_ADMIN")
 
                 .requestMatchers(HttpMethod.POST, "/api/sala/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/sala/**").hasAuthority("ROLE_ADMIN")
@@ -88,6 +89,7 @@ public class SecurityConfig {
 
                 .requestMatchers("/api/korisnik/**").hasAuthority("ROLE_ADMIN")
 
+                .requestMatchers(HttpMethod.POST, "/api/predavac", "/api/sluzbenik").hasAuthority("ROLE_ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/predavac/**", "/api/sluzbenik/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/predavac/**", "/api/sluzbenik/**").hasAuthority("ROLE_ADMIN")
                 .anyRequest().authenticated()

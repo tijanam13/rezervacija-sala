@@ -11,11 +11,11 @@ export default function Blokiran() {
           <Ban size={28} className="text-fon-coral" />
         </div>
         <p className="text-sm text-gray-600">
-          Vaš nalog je blokiran i nemate pristup sistemu. Za više informacija
-          ili ukidanje blokade, obratite se administratoru.
+          Vaš nalog je blokiran i nemate pristup sistemu. Za više informacija,
+          obratite se administratoru.
         </p>
         <Button
-          onClick={odjaviSe}
+          onClick={() => odjaviSe()}
           className="w-full bg-fon-coral text-white hover:bg-fon-coral/90"
         >
           Odjavi se

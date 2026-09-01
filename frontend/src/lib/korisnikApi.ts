@@ -16,11 +16,6 @@ export async function fetchKorisnici(
   return data;
 }
 
-export async function fetchKorisnik(id: number): Promise<KorisnikDto> {
-  const { data } = await api.get<KorisnikDto>(`/korisnik/${id}`);
-  return data;
-}
-
 export async function promeniStatusNaloga(
   id: number,
   noviStatus: StatusNaloga,

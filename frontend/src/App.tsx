@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import PregledRezervacija from "@/pages/PregledRezervacija";
 import NovaRezervacija from "@/pages/NovaRezervacija";
 import MojProfil from "@/pages/MojProfil";
 import MojeRezervacije from "@/pages/MojeRezervacije";
@@ -9,8 +10,12 @@ import ZaboravljenaLozinka from "@/pages/ZaboravljenaLozinka";
 import PromenaLozinke from "@/pages/PromenaLozinke";
 import ZabranjenPristup from "@/pages/ZabranjenPristup";
 import Blokiran from "@/pages/Blokiran";
-import Korisnici from "@/pages/admin/Korisnici";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import Korisnici from "@/pages/admin/Korisnici";
+import Sale from "@/pages/admin/Sale";
+import Sifarnici from "@/pages/admin/Sifarnici";
+import Zaposleni from "@/pages/admin/Zaposleni";
+import OdobravanjeRezervacija from "./pages/osoblje/OdobravanjeRezervacija";
 
 function App() {
   return (
@@ -20,7 +25,15 @@ function App() {
           path="/"
           element={
             <ProtectedRoute>
-              <Navigate to="/nova-rezervacija" replace />
+              <Navigate to="/pregled-rezervacija" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pregled-rezervacija"
+          element={
+            <ProtectedRoute>
+              <PregledRezervacija />
             </ProtectedRoute>
           }
         />
@@ -53,6 +66,38 @@ function App() {
           element={
             <ProtectedRoute uloge={["ADMIN"]}>
               <Korisnici />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/sale"
+          element={
+            <ProtectedRoute uloge={["ADMIN"]}>
+              <Sale />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/sifarnici"
+          element={
+            <ProtectedRoute uloge={["ADMIN"]}>
+              <Sifarnici />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/zaposleni"
+          element={
+            <ProtectedRoute uloge={["ADMIN"]}>
+              <Zaposleni />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/odobravanje-rezervacija"
+          element={
+            <ProtectedRoute uloge={["KOORDINATOR", "ADMIN"]}>
+              <OdobravanjeRezervacija />
             </ProtectedRoute>
           }
         />

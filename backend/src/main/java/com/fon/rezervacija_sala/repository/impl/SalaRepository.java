@@ -60,11 +60,4 @@ public class SalaRepository implements AppRepository<Sala, Long> {
         return rez.isEmpty() ? Optional.empty() : Optional.of(rez.get(0));
     }
 
-    public List<Sala> findByTipSale(Long tipSaleId) {
-        return entityManager.createQuery(
-                "SELECT s FROM Sala s LEFT JOIN FETCH s.tipSale t WHERE t.id = :tipSaleId", Sala.class)
-                .setParameter("tipSaleId", tipSaleId)
-                .getResultList();
-    }
-
 }

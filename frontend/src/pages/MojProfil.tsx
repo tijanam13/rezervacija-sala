@@ -21,12 +21,14 @@ export default function MojProfil() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <NavBar />
+      <NavBar
+        korisnikIme={profil ? `${profil.ime} ${profil.prezime}` : undefined}
+      />
 
       <div className="mx-auto max-w-2xl p-6">
         <div className="mb-6">
-          <p className="text-lg font-medium text-fon-navy">Moj profil</p>
-          <p className="text-sm text-gray-500">
+          <p className="text-2xl font-semibold text-fon-navy">Moj profil</p>
+          <p className="text-base text-gray-600">
             Pregled podataka o tvom nalogu.
           </p>
         </div>
@@ -44,17 +46,16 @@ export default function MojProfil() {
           </p>
         ) : profil ? (
           <div className="space-y-4">
-            {/* Osnovni podaci naloga */}
             <div className="rounded-2xl border border-fon-blue/20 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-fon-blue/10 text-fon-blue">
                   <User size={22} />
                 </div>
                 <div>
-                  <p className="text-lg font-medium text-fon-navy">
+                  <p className="text-xl font-semibold text-fon-navy">
                     {profil.ime} {profil.prezime}
                   </p>
-                  <Badge className="bg-fon-teal/15 text-fon-teal border-0">
+                  <Badge className="bg-fon-teal/15 text-sm text-fon-teal border-0">
                     {profil.tipKorisnika === "PREDAVAC"
                       ? "Predavač"
                       : "Službenik"}
@@ -95,7 +96,7 @@ export default function MojProfil() {
               <div className="rounded-2xl border border-fon-blue/20 bg-white p-5 shadow-sm">
                 <div className="mb-3 flex items-center gap-2">
                   <GraduationCap size={18} className="text-fon-blue" />
-                  <p className="font-medium text-fon-navy">
+                  <p className="text-lg font-medium text-fon-navy">
                     Podaci o predavaču
                   </p>
                 </div>
@@ -122,7 +123,7 @@ export default function MojProfil() {
               <div className="rounded-2xl border border-fon-blue/20 bg-white p-5 shadow-sm">
                 <div className="mb-3 flex items-center gap-2">
                   <Briefcase size={18} className="text-fon-blue" />
-                  <p className="font-medium text-fon-navy">
+                  <p className="text-lg font-medium text-fon-navy">
                     Podaci o službeniku
                   </p>
                 </div>

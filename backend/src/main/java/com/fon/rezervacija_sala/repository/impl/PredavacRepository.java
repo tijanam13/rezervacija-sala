@@ -55,14 +55,30 @@ public class PredavacRepository implements AppRepository<Predavac, Long> {
         }
     }
 
-    public List<Predavac> findByKatedra(Long katedraId) {
+    public long brojPredavacaZaKatedru(Long katedraId) {
         return entityManager.createQuery(
-                "SELECT p FROM Predavac p "
-                + "LEFT JOIN FETCH p.katedra k "
-                + "LEFT JOIN FETCH p.zvanje "
-                + "WHERE k.id = :katedraId", Predavac.class)
+                "SELECT COUNT(p) FROM Predavac p WHERE p.katedra.id = :katedraId", Long.class)
                 .setParameter("katedraId", katedraId)
-                .getResultList();
+                .getSingleResult();
+    }
+
+    public long brojPredavacaZaZvanje(Long zvanjeId) {
+        return entityManager.createQuery(
+                "SELECT COUNT(p) FROM Predavac p WHERE p.zvanje.id = :zvanjeId", Long.class)
+                .setParameter("zvanjeId", zvanjeId)
+                .getSingleResult();
+    }
+    
+    public boolean jeReferenciranKaoMentorIliKomisija(Long predavacId) {
+        Long brojKaoMentor = entityManager.createQuery(
+                "SELECT COUNT(z) FROM ZavrsniRad z WHERE z.mentor.id = :predavacId", Long.class)
+                .setParameter("predavacId", predavacId)
+                .getSingleResult();
+        Long brojKaoClanKomisije = entityManager.createQuery(
+                "SELECT COUNT(z) FROM ZavrsniRad z JOIN z.clanoviKomisije c WHERE c.id = :predavacId", Long.class)
+                .setParameter("predavacId", predavacId)
+                .getSingleResult();
+        return brojKaoMentor > 0 || brojKaoClanKomisije > 0;
     }
 
 }

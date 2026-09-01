@@ -1,6 +1,11 @@
 import axios from "axios";
 import api from "@/lib/api";
-import type { RezervacijaDto, StranicaDto } from "@/types";
+import type {
+  RezervacijaDto,
+  StranicaDto,
+  StatusRezervacije,
+  StatusStavke,
+} from "@/types";
 
 interface BackendGreska {
   timestamp: string;
@@ -35,6 +40,72 @@ export async function otkaziRezervaciju(id: number): Promise<RezervacijaDto> {
 export async function otkaziStavku(stavkaId: number): Promise<RezervacijaDto> {
   const { data } = await api.patch<RezervacijaDto>(
     `/rezervacija/stavka/${stavkaId}/otkazi`,
+  );
+  return data;
+}
+
+export async function fetchRezervacijaById(
+  id: number,
+): Promise<RezervacijaDto> {
+  const { data } = await api.get<RezervacijaDto>(`/rezervacija/${id}`);
+  return data;
+}
+
+export async function fetchSveRezervacije(
+  status?: StatusRezervacije,
+  stranica = 0,
+  velicina = 9,
+): Promise<StranicaDto<RezervacijaDto>> {
+  const { data } = await api.get<StranicaDto<RezervacijaDto>>("/rezervacija", {
+    params: { status, stranica, velicina },
+  });
+  return data;
+}
+
+export async function azurirajStatusRezervacije(
+  id: number,
+  noviStatus: StatusRezervacije,
+): Promise<RezervacijaDto> {
+  const { data } = await api.patch<RezervacijaDto>(
+    `/rezervacija/${id}/status`,
+    JSON.stringify(noviStatus),
+    { headers: { "Content-Type": "application/json" } },
+  );
+  return data;
+}
+
+export async function azurirajStatusStavke(
+  stavkaId: number,
+  noviStatus: StatusStavke,
+): Promise<RezervacijaDto> {
+  const { data } = await api.patch<RezervacijaDto>(
+    `/rezervacija/stavka/${stavkaId}/status`,
+    JSON.stringify(noviStatus),
+    { headers: { "Content-Type": "application/json" } },
+  );
+  return data;
+}
+
+export async function odbijRezervacijuSaRazlogom(
+  id: number,
+  razlog: string,
+): Promise<RezervacijaDto> {
+  const { data } = await api.patch<RezervacijaDto>(
+    `/rezervacija/${id}/odbij-sa-razlogom`,
+    JSON.stringify(razlog),
+    { headers: { "Content-Type": "application/json" } },
+  );
+  return data;
+}
+
+export async function odbijStavkuSaRazlogom(
+  stavkaId: number,
+  razlog: string,
+): Promise<RezervacijaDto> {
+  const { data } = await api.patch<RezervacijaDto>(
+    `/rezervacija/stavka/${stavkaId}/odbij-sa-razlogom`,
+    JSON.stringify(razlog),
+    { headers: { "Content-Type": "application/json" } },
   );
   return data;
 }

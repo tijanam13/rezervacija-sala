@@ -4,13 +4,16 @@ import com.fon.rezervacija_sala.dto.PredavacDto;
 import com.fon.rezervacija_sala.service.PredavacService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -28,14 +31,10 @@ public class PredavacController {
         return predavacService.findAll();
     }
 
-    @GetMapping("/{id}")
-    public PredavacDto findById(@PathVariable Long id) {
-        return predavacService.findById(id);
-    }
-
-    @GetMapping("/katedra/{katedraId}")
-    public List<PredavacDto> findByKatedra(@PathVariable Long katedraId) {
-        return predavacService.findByKatedra(katedraId);
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public PredavacDto create(@Valid @RequestBody PredavacDto dto) {
+        return predavacService.create(dto);
     }
 
     @PutMapping("/{id}")

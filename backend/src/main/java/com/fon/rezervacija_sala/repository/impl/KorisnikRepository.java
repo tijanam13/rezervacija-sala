@@ -4,6 +4,7 @@ import com.fon.rezervacija_sala.entity.Korisnik;
 import com.fon.rezervacija_sala.entity.NazivUloge;
 import com.fon.rezervacija_sala.repository.AppRepository;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import java.util.List;
@@ -93,6 +94,15 @@ public class KorisnikRepository implements AppRepository<Korisnik, Long> {
         List<Korisnik> rez = entityManager.createQuery(
                 "SELECT k FROM Korisnik k LEFT JOIN FETCH k.zaposleni WHERE k.email = :email", Korisnik.class)
                 .setParameter("email", email)
+                .getResultList();
+        return rez.isEmpty() ? Optional.empty() : Optional.of(rez.get(0));
+    }
+
+    public Optional<Korisnik> findByEmailForUpdate(String email) {
+        List<Korisnik> rez = entityManager.createQuery(
+                "SELECT k FROM Korisnik k WHERE k.email = :email", Korisnik.class)
+                .setParameter("email", email)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .getResultList();
         return rez.isEmpty() ? Optional.empty() : Optional.of(rez.get(0));
     }

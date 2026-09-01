@@ -23,6 +23,10 @@ public class SluzbenikDto {
     @Size(max = 50, message = "Broj radne knjižice može imati najviše 50 karaktera.")
     private String brojRadneKnjizice;
 
+    @jakarta.validation.constraints.Email(message = "Email adresa nije ispravnog formata.")
+    @Size(max = 150, message = "Email adresa može imati najviše 150 karaktera.")
+    private String poslovniEmail;
+
     @Size(max = 100, message = "Pozicija može imati najviše 100 karaktera.")
     private String pozicija;
 
@@ -82,6 +86,14 @@ public class SluzbenikDto {
 
     public void setBrojRadneKnjizice(String brojRadneKnjizice) {
         this.brojRadneKnjizice = brojRadneKnjizice;
+    }
+
+    public String getPoslovniEmail() {
+        return poslovniEmail;
+    }
+
+    public void setPoslovniEmail(String poslovniEmail) {
+        this.poslovniEmail = poslovniEmail;
     }
 
     public String getPozicija() {

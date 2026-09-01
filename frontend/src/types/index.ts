@@ -3,9 +3,15 @@ export type StatusRezervacije =
   | "ODOBRENA"
   | "DELIMICNO_ODOBRENA"
   | "ODBIJENA"
-  | "OTKAZANA";
+  | "OTKAZANA"
+  | "ISTEKLA";
 
-export type StatusStavke = "NA_CEKANJU" | "ODOBRENA" | "ODBIJENA" | "OTKAZANA";
+export type StatusStavke =
+  | "NA_CEKANJU"
+  | "ODOBRENA"
+  | "ODBIJENA"
+  | "OTKAZANA"
+  | "ISTEKLA";
 
 export interface KatedraDto {
   id: number;
@@ -31,6 +37,8 @@ export interface TipSaleDto {
   opis?: string;
 }
 
+export type StatusSale = "SLOBODNA" | "ZAUZETA" | "VAN_UPOTREBE";
+
 export interface SalaDto {
   id: number;
   naziv: string;
@@ -38,16 +46,17 @@ export interface SalaDto {
   sprat: number;
   kapacitet: number;
   brojRacunara: number;
-  status: "SLOBODNA" | "REZERVISANA" | "VAN_UPOTREBE";
+  status: StatusSale;
   tipSale: TipSaleDto;
 }
 
 export interface PredavacDto {
-  id: number;
+  id?: number;
   ime: string;
   prezime: string;
   brojTelefona?: string;
   brojRadneKnjizice?: string;
+  poslovniEmail?: string;
   titula?: string;
   terminKonsultacija?: string;
   katedra: KatedraDto;
@@ -55,11 +64,12 @@ export interface PredavacDto {
 }
 
 export interface SluzbenikDto {
-  id: number;
+  id?: number;
   ime: string;
   prezime: string;
   brojTelefona?: string;
   brojRadneKnjizice?: string;
+  poslovniEmail?: string;
   pozicija?: string;
   sluzba: SluzbaDto;
 }
@@ -166,11 +176,6 @@ export interface StranicaDto<T> {
   velicinaStranice: number;
   ukupnoElemenata: number;
   ukupnoStranica: number;
-}
-
-export interface LoginRequest {
-  email: string;
-  lozinka: string;
 }
 
 export interface AuthResponse {

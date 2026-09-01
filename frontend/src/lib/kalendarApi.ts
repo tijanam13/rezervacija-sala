@@ -13,6 +13,7 @@ type Aktivan = "NA_CEKANJU" | "ODOBRENA";
 function rezervacijaUTermine(r: RezervacijaDto): TerminPodaci[] {
   return r.stavke.map((s) => ({
     id: s.id ?? Math.random(),
+    rezervacijaId: r.id,
     salaNaziv: s.sala.naziv,
     datum: s.datumTermina,
     vremeOd: vremeUDecimalni(s.vremeOd),
@@ -20,6 +21,7 @@ function rezervacijaUTermine(r: RezervacijaDto): TerminPodaci[] {
     status: (s.statusStavke ?? "NA_CEKANJU") as TerminPodaci["status"],
     brojOsoba: s.brojOsoba,
     opis: s.opis,
+    napomena: r.napomena,
     korisnikImePrezime: r.korisnik
       ? `${r.korisnik.ime} ${r.korisnik.prezime}`
       : "",
@@ -80,4 +82,17 @@ export async function fetchTerminiZaPeriod(
     );
 
   return [...mojiTermini, ...tudjiTermini];
+}
+
+export async function fetchTerminiZaPeriodAdministracija(
+  od: string,
+  doDatum: string,
+): Promise<TerminPodaci[]> {
+  const odgovor = await api.get<StranicaDto<RezervacijaDto>>("/rezervacija", {
+    params: { stranica: 0, velicina: 500 },
+  });
+
+  return odgovor.data.sadrzaj
+    .flatMap(rezervacijaUTermine)
+    .filter((t) => t.datum >= od && t.datum <= doDatum);
 }

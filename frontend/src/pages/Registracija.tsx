@@ -29,6 +29,7 @@ import {
   fetchSluzbe,
 } from "@/lib/authApi";
 import { izvuciPorukuGreske } from "@/lib/rezervacijaApi";
+import { selectItemsOd } from "@/lib/utils";
 import type { KatedraDto, ZvanjeDto, SluzbaDto } from "@/types";
 
 const SELECT_PROPS = {
@@ -63,18 +64,9 @@ export default function Registracija() {
   const [greska, setGreska] = useState<string | null>(null);
   const [uspeh, setUspeh] = useState(false);
 
-  const katedreItems = useMemo(
-    () => Object.fromEntries(katedre.map((k) => [String(k.id), k.naziv])),
-    [katedre],
-  );
-  const zvanjaItems = useMemo(
-    () => Object.fromEntries(zvanja.map((z) => [String(z.id), z.naziv])),
-    [zvanja],
-  );
-  const sluzbeItems = useMemo(
-    () => Object.fromEntries(sluzbe.map((s) => [String(s.id), s.naziv])),
-    [sluzbe],
-  );
+  const katedreItems = useMemo(() => selectItemsOd(katedre), [katedre]);
+  const zvanjaItems = useMemo(() => selectItemsOd(zvanja), [zvanja]);
+  const sluzbeItems = useMemo(() => selectItemsOd(sluzbe), [sluzbe]);
 
   useEffect(() => {
     fetchKatedre()

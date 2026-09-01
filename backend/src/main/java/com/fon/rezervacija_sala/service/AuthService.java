@@ -158,34 +158,62 @@ public class AuthService {
 
     private String buildVerifikacioniEmailHtml(String ime, String link) {
         return """
-        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#f4f7fa;">
-          <div style="background:linear-gradient(120deg,#002145 0%%,#014A7C 100%%);padding:20px 28px;border-radius:16px 16px 0 0;">
-            <table role="presentation" cellpadding="0" cellspacing="0">
-              <tr>
-                <td style="width:32px;height:32px;background:#11C098;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,sans-serif;font-weight:bold;font-size:13px;color:#002145;">FON</td>
-                <td style="padding-left:10px;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;">Rezervacija sala</td>
-              </tr>
-            </table>
-          </div>
-          <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:32px 28px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-            <h2 style="margin:0 0 12px;color:#002145;font-size:20px;">Pozdrav %s,</h2>
-            <p style="margin:0 0 20px;color:#444444;font-size:15px;line-height:1.5;">
-              Hvala na registraciji na sistem za rezervaciju sala Fakulteta organizacionih nauka.
-              Kliknite na dugme ispod da potvrdite svoj nalog.
-            </p>
-            <div style="text-align:center;margin:28px 0;">
-              <a href="%s" style="display:inline-block;padding:14px 28px;background:#11C098;color:#032943;text-decoration:none;border-radius:10px;font-weight:bold;font-size:15px;">
-                Potvrdi nalog
-              </a>
-            </div>
-            <p style="margin:0 0 6px;font-size:13px;color:#888888;">Ako dugme ne radi, otvorite sledeći link u pregledaču:</p>
-            <p style="margin:0 0 20px;word-break:break-all;font-size:12px;color:#014A7C;">%s</p>
-            <hr style="border:none;border-top:1px solid #eef0f2;margin:20px 0;">
-            <p style="margin:0;font-size:12px;color:#999999;">
-              Link važi 24 sata. Ako niste pokušali da se registrujete, slobodno ignorišite ovaj mejl.
-            </p>
-          </div>
-        </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="color-scheme" content="light only">
+          <meta name="supported-color-schemes" content="light only">
+          <style>
+            :root { color-scheme: light only; supported-color-schemes: light only; }
+            body, table, td, div, p, a { -webkit-text-size-adjust: 100%%; }
+          </style>
+        </head>
+        <body bgcolor="#f4f7fa" style="background-color:#f4f7fa !important;margin:0;padding:0;">
+        <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" bgcolor="#f4f7fa" style="background-color:#f4f7fa !important;">
+          <tr>
+            <td align="center" style="padding:24px;">
+              <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%%;">
+                <tr>
+                  <td bgcolor="#002145" style="background-color:#002145 !important;padding:20px 28px;border-radius:16px 16px 0 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td bgcolor="#11C098" style="width:32px;height:32px;background-color:#11C098 !important;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,sans-serif;font-weight:bold;font-size:13px;color:#002145 !important;">FON</td>
+                        <td style="padding-left:10px;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;color:#ffffff !important;">Rezervacija sala</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td bgcolor="#ffffff" style="background-color:#ffffff !important;border-radius:0 0 16px 16px;padding:32px 28px;">
+                    <h2 style="margin:0 0 12px;color:#002145 !important;font-size:20px;font-family:Arial,sans-serif;">Pozdrav %s,</h2>
+                    <p style="margin:0 0 20px;color:#444444 !important;font-size:15px;line-height:1.5;font-family:Arial,sans-serif;">
+                      Hvala na registraciji na sistem za rezervaciju sala Fakulteta organizacionih nauka.
+                      Kliknite na dugme ispod da potvrdite svoj nalog.
+                    </p>
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px auto;">
+                      <tr>
+                        <td bgcolor="#11C098" style="background-color:#11C098 !important;border-radius:10px;">
+                          <a href="%s" style="display:inline-block;padding:14px 28px;color:#032943 !important;text-decoration:none;font-weight:bold;font-size:15px;font-family:Arial,sans-serif;">
+                            Potvrdi nalog
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="margin:0 0 6px;font-size:13px;color:#888888 !important;font-family:Arial,sans-serif;">Ako dugme ne radi, otvorite sledeći link u pregledaču:</p>
+                    <p style="margin:0 0 20px;word-break:break-all;font-size:12px;color:#014A7C !important;font-family:Arial,sans-serif;">%s</p>
+                    <hr style="border:none;border-top:1px solid #eef0f2;margin:20px 0;">
+                    <p style="margin:0;font-size:12px;color:#999999 !important;font-family:Arial,sans-serif;">
+                      Link važi 24 sata. Ako niste pokušali da se registrujete, slobodno ignorišite ovaj mejl.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        </body>
+        </html>
         """.formatted(ime, link, link);
     }
 
@@ -210,6 +238,7 @@ public class AuthService {
         return izgradiAuthResponse(k);
     }
 
+    @Transactional
     public AuthResponse login(LoginRequest req) {
         Korisnik postojeci = korisnici.findByEmail(req.getEmail()).orElse(null);
 
@@ -228,7 +257,7 @@ public class AuthService {
             );
         } catch (AuthenticationException ex) {
             if (postojeci != null) {
-                evidentirajNeuspesnuPrijavu(postojeci);
+                evidentirajNeuspesnuPrijavu(req.getEmail());
             }
             throw ex;
         }
@@ -241,7 +270,12 @@ public class AuthService {
         return izgradiAuthResponse(k);
     }
 
-    private void evidentirajNeuspesnuPrijavu(Korisnik k) {
+    private void evidentirajNeuspesnuPrijavu(String email) {
+        Korisnik k = korisnici.findByEmailForUpdate(email).orElse(null);
+        if (k == null) {
+            return;
+        }
+
         int noviBroj = k.getBrojNeuspesnihPokusaja() + 1;
         k.setBrojNeuspesnihPokusaja(noviBroj);
 
@@ -311,34 +345,62 @@ public class AuthService {
 
     private String buildResetEmailHtml(String ime, String link) {
         return """
-        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#f4f7fa;">
-          <div style="background:linear-gradient(120deg,#002145 0%%,#014A7C 100%%);padding:20px 28px;border-radius:16px 16px 0 0;">
-            <table role="presentation" cellpadding="0" cellspacing="0">
-              <tr>
-                <td style="width:32px;height:32px;background:#11C098;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,sans-serif;font-weight:bold;font-size:13px;color:#002145;">FON</td>
-                <td style="padding-left:10px;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;">Rezervacija sala</td>
-              </tr>
-            </table>
-          </div>
-          <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:32px 28px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-            <h2 style="margin:0 0 12px;color:#002145;font-size:20px;">Pozdrav %s,</h2>
-            <p style="margin:0 0 20px;color:#444444;font-size:15px;line-height:1.5;">
-              Poslali ste zahtev za promenu lozinke. Kliknite na dugme ispod da postavite novu lozinku.
-            </p>
-            <div style="text-align:center;margin:28px 0;">
-              <a href="%s" style="display:inline-block;padding:14px 28px;background:#11C098;color:#032943;text-decoration:none;border-radius:10px;font-weight:bold;font-size:15px;">
-                Postavi novu lozinku
-              </a>
-            </div>
-            <p style="margin:0 0 6px;font-size:13px;color:#888888;">Ako dugme ne radi, otvorite sledeći link u pregledaču:</p>
-            <p style="margin:0 0 20px;word-break:break-all;font-size:12px;color:#014A7C;">%s</p>
-            <hr style="border:none;border-top:1px solid #eef0f2;margin:20px 0;">
-            <p style="margin:0;font-size:12px;color:#999999;">
-              Link važi 30 minuta. Ako niste poslali zahtev za promenu lozinke, slobodno ignorišite ovaj mejl.
-              Vaša lozinka ostaje nepromenjena.
-            </p>
-          </div>
-        </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="color-scheme" content="light only">
+          <meta name="supported-color-schemes" content="light only">
+          <style>
+            :root { color-scheme: light only; supported-color-schemes: light only; }
+            body, table, td, div, p, a { -webkit-text-size-adjust: 100%%; }
+          </style>
+        </head>
+        <body bgcolor="#f4f7fa" style="background-color:#f4f7fa !important;margin:0;padding:0;">
+        <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" bgcolor="#f4f7fa" style="background-color:#f4f7fa !important;">
+          <tr>
+            <td align="center" style="padding:24px;">
+              <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%%;">
+                <tr>
+                  <td bgcolor="#002145" style="background-color:#002145 !important;padding:20px 28px;border-radius:16px 16px 0 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td bgcolor="#11C098" style="width:32px;height:32px;background-color:#11C098 !important;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,sans-serif;font-weight:bold;font-size:13px;color:#002145 !important;">FON</td>
+                        <td style="padding-left:10px;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;color:#ffffff !important;">Rezervacija sala</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td bgcolor="#ffffff" style="background-color:#ffffff !important;border-radius:0 0 16px 16px;padding:32px 28px;">
+                    <h2 style="margin:0 0 12px;color:#002145 !important;font-size:20px;font-family:Arial,sans-serif;">Pozdrav %s,</h2>
+                    <p style="margin:0 0 20px;color:#444444 !important;font-size:15px;line-height:1.5;font-family:Arial,sans-serif;">
+                      Poslali ste zahtev za promenu lozinke. Kliknite na dugme ispod da postavite novu lozinku.
+                    </p>
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px auto;">
+                      <tr>
+                        <td bgcolor="#11C098" style="background-color:#11C098 !important;border-radius:10px;">
+                          <a href="%s" style="display:inline-block;padding:14px 28px;color:#032943 !important;text-decoration:none;font-weight:bold;font-size:15px;font-family:Arial,sans-serif;">
+                            Postavi novu lozinku
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="margin:0 0 6px;font-size:13px;color:#888888 !important;font-family:Arial,sans-serif;">Ako dugme ne radi, otvorite sledeći link u pregledaču:</p>
+                    <p style="margin:0 0 20px;word-break:break-all;font-size:12px;color:#014A7C !important;font-family:Arial,sans-serif;">%s</p>
+                    <hr style="border:none;border-top:1px solid #eef0f2;margin:20px 0;">
+                    <p style="margin:0;font-size:12px;color:#999999 !important;font-family:Arial,sans-serif;">
+                      Link važi 30 minuta. Ako niste poslali zahtev za promenu lozinke, slobodno ignorišite ovaj mejl.
+                      Vaša lozinka ostaje nepromenjena.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        </body>
+        </html>
         """.formatted(ime, link, link);
     }
 

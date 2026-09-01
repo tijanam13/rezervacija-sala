@@ -51,14 +51,6 @@ public class RezervacijaController {
         return rezervacijaService.mojeRezervacije(stranica, velicina);
     }
 
-    @GetMapping("/korisnik/{korisnikId}")
-    public StranicaDto<RezervacijaDto> findByKorisnikId(
-            @PathVariable Long korisnikId,
-            @RequestParam(defaultValue = "0") int stranica,
-            @RequestParam(defaultValue = "9") int velicina) {
-        return rezervacijaService.findByKorisnikId(korisnikId, stranica, velicina);
-    }
-
     @GetMapping("/zauzetost")
     public List<ZauzetostDto> zauzetost(
             @RequestParam LocalDate od,
@@ -75,6 +67,16 @@ public class RezervacijaController {
     @PatchMapping("/{id}/status")
     public RezervacijaDto azurirajStatus(@PathVariable Long id, @RequestBody StatusRezervacije noviStatus) {
         return rezervacijaService.azurirajStatus(id, noviStatus);
+    }
+
+    @PatchMapping("/{id}/odbij-sa-razlogom")
+    public RezervacijaDto odbijRezervacijuSaRazlogom(@PathVariable Long id, @RequestBody String razlog) {
+        return rezervacijaService.odbijRezervacijuSaRazlogom(id, razlog);
+    }
+
+    @PatchMapping("/stavka/{stavkaId}/odbij-sa-razlogom")
+    public RezervacijaDto odbijStavkuSaRazlogom(@PathVariable Long stavkaId, @RequestBody String razlog) {
+        return rezervacijaService.odbijStavkuSaRazlogom(stavkaId, razlog);
     }
 
     @PatchMapping("/stavka/{stavkaId}/status")

@@ -31,16 +31,6 @@ public class SalaController {
         return salaService.findAll();
     }
 
-    @GetMapping("/{id}")
-    public SalaDto findById(@PathVariable Long id) {
-        return salaService.findById(id);
-    }
-
-    @GetMapping("/tip-sale/{tipSaleId}")
-    public List<SalaDto> findByTipSale(@PathVariable Long tipSaleId) {
-        return salaService.findByTipSale(tipSaleId);
-    }
-
     @PostMapping
     public ResponseEntity<SalaDto> create(@Valid @RequestBody SalaDto dto) {
         SalaDto kreirana = salaService.create(dto);

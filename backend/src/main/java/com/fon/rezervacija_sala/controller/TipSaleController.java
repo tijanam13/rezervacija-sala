@@ -29,11 +29,6 @@ public class TipSaleController {
         return tipSaleService.findAll();
     }
 
-    @GetMapping("/{id}")
-    public TipSaleDto findById(@PathVariable Long id) {
-        return tipSaleService.findById(id);
-    }
-
     @PostMapping
     public ResponseEntity<TipSaleDto> create(@Valid @RequestBody TipSaleDto dto) {
         TipSaleDto kreiran = tipSaleService.create(dto);

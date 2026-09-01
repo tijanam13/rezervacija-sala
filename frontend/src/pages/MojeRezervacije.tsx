@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { AlertCircle, Ban, ChevronLeft, ChevronRight } from "lucide-react";
 import { NavBar } from "@/components/layout/NavBar";
 import { DetaljiSvrhe } from "@/components/rezervacije/DetaljiSvrhe";
+import { RezervacijaKartica } from "@/components/rezervacije/RezervacijaKartica";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Red } from "@/components/common/Red";
@@ -94,11 +95,12 @@ export default function MojeRezervacije() {
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar />
-
       <div className="mx-auto max-w-5xl p-6">
         <div className="mb-6">
-          <p className="text-lg font-medium text-fon-navy">Moje rezervacije</p>
-          <p className="text-sm text-gray-500">
+          <p className="text-2xl font-semibold text-fon-navy">
+            Moje rezervacije
+          </p>
+          <p className="text-base text-gray-600">
             Klikni na rezervaciju da vidiš sve detalje.
           </p>
         </div>
@@ -120,35 +122,14 @@ export default function MojeRezervacije() {
           </p>
         ) : (
           <div className="space-y-3">
-            {rezervacije.map((r) => {
-              const stilRez = getStatusStyle(r.status ?? "NA_CEKANJU");
-              return (
-                <button
-                  key={r.id}
-                  onClick={() => setIzabrana(r)}
-                  className="flex w-full items-center justify-between rounded-xl border border-fon-blue/20 bg-white p-4 text-left shadow-sm transition-colors hover:bg-fon-blue/5"
-                >
-                  <div>
-                    <p className="font-medium text-fon-navy">
-                      {nazivSvrhe(r.svrha)}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {r.stavke.length}{" "}
-                      {r.stavke.length === 1 ? "sala/termin" : "sale/termina"}
-                      {r.stavke[0] && (
-                        <> · {formatDatum(r.stavke[0].datumTermina)}</>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge className={`${stilRez.bg} ${stilRez.text} border-0`}>
-                      {stilRez.label}
-                    </Badge>
-                    <ChevronRight size={18} className="text-gray-400" />
-                  </div>
-                </button>
-              );
-            })}
+            {rezervacije.map((r) => (
+              <RezervacijaKartica
+                key={r.id}
+                rezervacija={r}
+                onClick={() => setIzabrana(r)}
+                pokaziStrelicu
+              />
+            ))}
           </div>
         )}
 
@@ -178,12 +159,12 @@ export default function MojeRezervacije() {
           </div>
         )}
       </div>
-
+      #{" "}
       <Dialog
         open={izabrana !== null}
         onOpenChange={(o) => !o && setIzabrana(null)}
       >
-        <DialogContent className="max-h-[85vh] overflow-y-auto border-2 border-fon-navy bg-white sm:max-w-xl">
+        <DialogContent className="max-h-[85vh] overflow-y-auto border-2 border-fon-navy bg-white sm:max-w-2xl">
           {izabrana && (
             <>
               <DialogHeader>
@@ -192,22 +173,16 @@ export default function MojeRezervacije() {
                 </DialogTitle>
               </DialogHeader>
 
-              <div className="space-y-4 text-sm">
-                <div className="space-y-2 rounded-lg border border-fon-blue/20 bg-fon-blue/5 p-3">
+              <div className="space-y-4 text-base">
+                <div className="space-y-2 rounded-lg border border-fon-blue/20 bg-white p-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Status rezervacije</span>
+                    <span className="text-gray-700">Status rezervacije</span>
                     <Badge
                       className={`${getStatusStyle(izabrana.status ?? "NA_CEKANJU").bg} ${getStatusStyle(izabrana.status ?? "NA_CEKANJU").text} border-0`}
                     >
                       {getStatusStyle(izabrana.status ?? "NA_CEKANJU").label}
                     </Badge>
                   </div>
-                  {izabrana.id !== undefined && (
-                    <Red
-                      naziv="Broj rezervacije"
-                      vrednost={`#${izabrana.id}`}
-                    />
-                  )}
                   {izabrana.datumKreiranja && (
                     <Red
                       naziv="Kreirana"
@@ -240,7 +215,7 @@ export default function MojeRezervacije() {
                 </div>
 
                 <div className="rounded-lg border border-fon-blue/20 p-3">
-                  <p className="mb-2 font-medium text-fon-navy">
+                  <p className="mb-2 text-lg font-medium text-fon-navy">
                     Detalji svrhe
                   </p>
                   <DetaljiSvrhe svrha={izabrana.svrha} />
@@ -248,7 +223,9 @@ export default function MojeRezervacije() {
 
                 <div>
                   <p className="mb-2 font-medium text-fon-navy">
-                    Sale i termini ({izabrana.stavke.length})
+                    <span className="text-lg">
+                      Sale i termini ({izabrana.stavke.length})
+                    </span>
                   </p>
                   <div className="space-y-3">
                     {izabrana.stavke.map((s) => {
@@ -261,7 +238,7 @@ export default function MojeRezervacije() {
                           className="space-y-2 rounded-lg border border-fon-blue/20 p-3"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-medium text-fon-dark">
+                            <span className="text-lg font-medium text-fon-dark">
                               {s.sala.naziv}
                             </span>
                             <Badge
@@ -333,7 +310,6 @@ export default function MojeRezervacije() {
           )}
         </DialogContent>
       </Dialog>
-
       <Dialog
         open={potvrdaZaOtkaz !== null}
         onOpenChange={(otvoreno) => !otvoreno && setPotvrdaZaOtkaz(null)}

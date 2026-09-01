@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { Mail, Lock, Eye, EyeOff, AlertCircle, Info } from "lucide-react";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,9 @@ import { sacuvajSesiju } from "@/lib/auth";
 
 export default function Prijava() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sesijaIstekla = searchParams.get("istekla") === "1";
+
   const [email, setEmail] = useState("");
   const [lozinka, setLozinka] = useState("");
   const [prikaziLozinku, setPrikaziLozinku] = useState(false);
@@ -37,6 +40,13 @@ export default function Prijava() {
       podnaslov="Prijavi se svojim fakultetskim nalogom"
     >
       <div className="space-y-4">
+        {sesijaIstekla && (
+          <div className="flex items-start gap-2 rounded-lg border border-fon-blue/20 bg-fon-blue/5 p-3 text-sm text-fon-blue">
+            <Info size={16} className="mt-0.5 shrink-0" />
+            <span>Vaša sesija je istekla. Prijavite se ponovo.</span>
+          </div>
+        )}
+
         {greska && (
           <div className="flex items-start gap-2 rounded-lg border border-fon-coral/30 bg-fon-coral/10 p-3 text-sm text-fon-coral">
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
