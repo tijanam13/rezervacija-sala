@@ -24,7 +24,9 @@ public abstract class Zaposleni {
     private String brojRadneKnjizice;
 
     @Column(length = 150)
-    private String poslovniEmail;    public Zaposleni() {
+    private String poslovniEmail;    
+    
+    public Zaposleni() {
     }
 
     public Zaposleni(Long id) {
