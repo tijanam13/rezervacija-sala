@@ -288,6 +288,14 @@ export default function OdobravanjeRezervacija() {
                       )}
                     />
                   )}
+                  <Red
+                    naziv="Datum termina"
+                    vrednost={formatDatum(izabrana.datumTermina)}
+                  />
+                  <Red
+                    naziv="Vreme"
+                    vrednost={`${formatVreme(vremeUDecimalni(izabrana.vremeOd))} - ${formatVreme(vremeUDecimalni(izabrana.vremeDo))}`}
+                  />
                   {izabrana.napomena && (
                     <Red
                       naziv="Napomena (cela rezervacija)"
@@ -367,14 +375,6 @@ export default function OdobravanjeRezervacija() {
                           <Red
                             naziv="Kapacitet sale"
                             vrednost={`${s.sala.kapacitet} mesta`}
-                          />
-                          <Red
-                            naziv="Datum"
-                            vrednost={formatDatum(s.datumTermina)}
-                          />
-                          <Red
-                            naziv="Vreme"
-                            vrednost={`${formatVreme(vremeUDecimalni(s.vremeOd))} - ${formatVreme(vremeUDecimalni(s.vremeDo))}`}
                           />
                           <Red
                             naziv="Broj osoba"

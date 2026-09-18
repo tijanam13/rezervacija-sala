@@ -98,27 +98,31 @@ public class RezervacijaService {
         return new StranicaDto<>(sadrzaj, stranica, velicina, ukupno);
     }
 
-    public StranicaDto<RezervacijaDto> mojeRezervacije(int stranica, int velicina) {
+    public StranicaDto<RezervacijaDto> mojeRezervacije(StatusRezervacije status, LocalDate odDatum, LocalDate doDatum,
+            int stranica, int velicina) {
+        if (odDatum != null && doDatum != null && doDatum.isBefore(odDatum)) {
+            throw new NevalidanZahtevException("Krajnji datum ne sme biti pre početnog.");
+        }
         Korisnik k = trenutniKorisnik();
         List<RezervacijaDto> sadrzaj = mapper.toDtoList(
-                rezervacije.findByKorisnikIdPaged(k.getId(), stranica, velicina));
-        long ukupno = rezervacije.brojRezervacijaPoKorisniku(k.getId());
+                rezervacije.findByKorisnikIdPaged(k.getId(), status, odDatum, doDatum, stranica, velicina));
+        long ukupno = rezervacije.brojRezervacijaPoKorisniku(k.getId(), status, odDatum, doDatum);
         return new StranicaDto<>(sadrzaj, stranica, velicina, ukupno);
     }
 
-    public List<ZauzetostDto> pregledZauzetosti(LocalDate od, LocalDate doDatum) {
-        if (od == null || doDatum == null) {
+    public List<ZauzetostDto> pregledZauzetosti(LocalDate odDatum, LocalDate doDatum) {
+        if (odDatum == null || doDatum == null) {
             throw new NevalidanZahtevException("Početni i krajnji datum perioda su obavezni.");
         }
-        if (doDatum.isBefore(od)) {
+        if (doDatum.isBefore(odDatum)) {
             throw new NevalidanZahtevException("Krajnji datum ne sme biti pre početnog.");
         }
-        return stavkeRepo.findAktivneStavkeZaPeriod(od, doDatum).stream()
+        return stavkeRepo.findAktivneStavkeZaPeriod(odDatum, doDatum).stream()
                 .map(st -> new ZauzetostDto(
                 st.getSala().getId(),
-                st.getDatumTermina(),
-                st.getVremeOd(),
-                st.getVremeDo(),
+                st.getRezervacija().getDatumTermina(),
+                st.getRezervacija().getVremeOd(),
+                st.getRezervacija().getVremeDo(),
                 st.getStatusStavke(),
                 st.getBrojOsoba(),
                 nazivZaZauzetost(st.getRezervacija().getSvrha())))
@@ -135,7 +139,8 @@ public class RezervacijaService {
         }
         String spisak = preklapajuce.stream()
                 .map(st -> "'" + nazivZaZauzetost(st.getRezervacija().getSvrha()) + "' ("
-                        + st.getVremeOd() + "-" + st.getVremeDo() + ", " + st.getBrojOsoba() + " osoba)")
+                        + st.getRezervacija().getVremeOd() + "-" + st.getRezervacija().getVremeDo()
+                        + ", " + st.getBrojOsoba() + " osoba)")
                 .distinct()
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");
@@ -171,6 +176,11 @@ public class RezervacijaService {
             throw new NevalidanZahtevException("Svrha rezervacije je obavezna.");
         }
 
+        LocalDate datum = dto.getDatumTermina();
+        LocalTime vremeOd = dto.getVremeOd();
+        LocalTime vremeDo = dto.getVremeDo();
+        validirajTerminRezervacije(datum, vremeOd, vremeDo);
+
         Korisnik podnosilac = trenutniKorisnik();
 
         dto.getStavke().stream()
@@ -179,10 +189,13 @@ public class RezervacijaService {
                 .distinct()
                 .sorted()
                 .forEach(salaId -> sale.findByIdForUpdate(salaId)
-                .orElseThrow(() -> new ResursNijePronadjenException("Sala sa id " + salaId + " ne postoji.")));
+                .orElseThrow(() -> new ResursNijePronadjenException("Sala ne postoji.")));
 
         Rezervacija r = new Rezervacija();
         r.setDatumKreiranja(LocalDateTime.now());
+        r.setDatumTermina(datum);
+        r.setVremeOd(vremeOd);
+        r.setVremeDo(vremeDo);
         r.setStatus(StatusRezervacije.NA_CEKANJU);
         r.setNapomena(dto.getNapomena());
         r.setKorisnik(podnosilac);
@@ -190,17 +203,32 @@ public class RezervacijaService {
 
         List<StavkaRezervacije> nove = new ArrayList<>();
         for (StavkaRezervacijeDto stavkaDto : dto.getStavke()) {
-            StavkaRezervacije stavka = izgradiIProveriStavku(stavkaDto, nove);
+            StavkaRezervacije stavka = izgradiIProveriStavku(stavkaDto, datum, vremeOd, vremeDo, nove);
             r.dodajStavku(stavka);
             nove.add(stavka);
         }
 
         rezervacije.save(r);
 
-        log.info("Kreirana rezervacija (id: {}) korisnika (id: {}, email: {}) sa {} stavki/stavkama.",
-                r.getIdRezervacije(), podnosilac.getId(), podnosilac.getEmail(), nove.size());
+        log.info("Kreirana rezervacija (id: {}) korisnika (id: {}, email: {}) za termin {} {}-{} sa {} stavki/stavkama.",
+                r.getId(), podnosilac.getId(), podnosilac.getEmail(), datum, vremeOd, vremeDo, nove.size());
 
         return mapper.toDto(r);
+    }
+
+    private void validirajTerminRezervacije(LocalDate datum, LocalTime vremeOd, LocalTime vremeDo) {
+        if (datum == null || vremeOd == null || vremeDo == null) {
+            throw new NevalidanZahtevException("Datum termina i vreme početka/završetka su obavezni.");
+        }
+        if (!vremeOd.isBefore(vremeDo)) {
+            throw new NevalidanZahtevException("Vreme početka termina mora biti pre vremena završetka.");
+        }
+        if (datum.isBefore(LocalDate.now())) {
+            throw new NevalidanZahtevException("Datum termina ne može biti u prošlosti.");
+        }
+        if (datum.isEqual(LocalDate.now()) && vremeOd.isBefore(LocalTime.now())) {
+            throw new NevalidanZahtevException("Vreme početka termina ne može biti u prošlosti.");
+        }
     }
 
     private SvrhaRezervacije izgradiIProveriSvrhu(SvrhaRezervacijeDto svrhaDto) {
@@ -212,13 +240,13 @@ public class RezervacijaService {
                 throw new NevalidanZahtevException("Mentor je obavezan.");
             }
             if (!predavci.findById(mentor.getId()).isPresent()) {
-                throw new ResursNijePronadjenException("Predavac (mentor) sa id " + mentor.getId() + " ne postoji.");
+                throw new ResursNijePronadjenException("Predavac (mentor) ne postoji.");
             }
 
             for (Predavac clan : zavrsniRad.getClanoviKomisije()) {
                 if (!predavci.findById(clan.getId()).isPresent()) {
                     throw new ResursNijePronadjenException(
-                            "Predavac (član komisije) sa id " + clan.getId() + " ne postoji.");
+                            "Predavac (član komisije) ne postoji.");
                 }
             }
         }
@@ -242,18 +270,16 @@ public class RezervacijaService {
 
             Zaposleni z = zaposleni.findById(zaposleniId)
                     .orElseThrow(() -> new ResursNijePronadjenException(
-                            "Zaposleni sa id " + zaposleniId + " ne postoji."));
+                            "Zaposleni ne postoji."));
 
             ucesniciEntiteta.get(i).setZaposleni(z);
         }
     }
 
-    private StavkaRezervacije izgradiIProveriStavku(StavkaRezervacijeDto dto, List<StavkaRezervacije> nakupljene) {
+    private StavkaRezervacije izgradiIProveriStavku(StavkaRezervacijeDto dto, LocalDate datum,
+            LocalTime vremeOd, LocalTime vremeDo, List<StavkaRezervacije> nakupljene) {
         if (dto.getSala() == null || dto.getSala().getId() == null) {
             throw new NevalidanZahtevException("Svaka stavka rezervacije mora imati navedenu salu.");
-        }
-        if (dto.getDatumTermina() == null || dto.getVremeOd() == null || dto.getVremeDo() == null) {
-            throw new NevalidanZahtevException("Datum termina i vreme početka/završetka su obavezni.");
         }
         if (dto.getBrojOsoba() == null || dto.getBrojOsoba() < 1) {
             throw new NevalidanZahtevException("Broj osoba mora biti najmanje 1.");
@@ -261,26 +287,11 @@ public class RezervacijaService {
 
         Sala sala = sale.findByIdForUpdate(dto.getSala().getId())
                 .orElseThrow(() -> new ResursNijePronadjenException(
-                        "Sala sa id " + dto.getSala().getId() + " ne postoji."));
+                        "Sala ne postoji."));
 
         if (sala.getStatus() == StatusSale.VAN_UPOTREBE) {
             throw new SalaNijeDostupnaException(
                     sala.getNaziv() + " (" + sala.getZgrada() + ") trenutno nije dostupna za rezervaciju.");
-        }
-
-        LocalDate datum = dto.getDatumTermina();
-        LocalTime vremeOd = dto.getVremeOd();
-        LocalTime vremeDo = dto.getVremeDo();
-
-        if (!vremeOd.isBefore(vremeDo)) {
-            throw new NevalidanZahtevException(
-                    "Vreme početka termina mora biti pre vremena završetka (sala: " + sala.getNaziv() + ").");
-        }
-        if (datum.isBefore(LocalDate.now())) {
-            throw new NevalidanZahtevException("Datum termina ne može biti u prošlosti.");
-        }
-        if (datum.isEqual(LocalDate.now()) && vremeOd.isBefore(LocalTime.now())) {
-            throw new NevalidanZahtevException("Vreme početka termina ne može biti u prošlosti.");
         }
 
         if (dto.getBrojOsoba() > sala.getKapacitet()) {
@@ -299,22 +310,16 @@ public class RezervacijaService {
         }
 
         int zauzetoUnutarZahteva = nakupljene.stream()
-                .filter(druga -> druga.getSala().getId().equals(sala.getId())
-                        && druga.getDatumTermina().isEqual(datum)
-                        && vremeOd.isBefore(druga.getVremeDo())
-                        && druga.getVremeOd().isBefore(vremeDo))
+                .filter(druga -> druga.getSala().getId().equals(sala.getId()))
                 .mapToInt(StavkaRezervacije::getBrojOsoba)
                 .sum();
         if (zauzetoIzBaze + zauzetoUnutarZahteva + dto.getBrojOsoba() > sala.getKapacitet()) {
             throw new TerminZauzetException(
-                    "Zahtev sadrži više stavki za istu salu (" + sala.getNaziv()
-                    + ") čiji zbir premašuje njen kapacitet u preklapajućem terminu.");
+                    "Više stavki u ovom zahtevu odnosi se na istu salu (" + sala.getNaziv()
+                    + ") u terminima koji se preklapaju, a zbir broja osoba premašuje njen kapacitet.");
         }
 
         StavkaRezervacije stavka = new StavkaRezervacije();
-        stavka.setDatumTermina(datum);
-        stavka.setVremeOd(vremeOd);
-        stavka.setVremeDo(vremeDo);
         stavka.setBrojOsoba(dto.getBrojOsoba());
         stavka.setOpis(dto.getOpis());
         stavka.setStatusStavke(StatusStavke.NA_CEKANJU);
@@ -332,52 +337,52 @@ public class RezervacijaService {
         }
 
         StavkaRezervacije stavka = stavkeRepo.findById(stavkaId)
-                .orElseThrow(() -> new ResursNijePronadjenException("Stavka rezervacije sa id " + stavkaId + " ne postoji."));
+                .orElseThrow(() -> new ResursNijePronadjenException("Stavka rezervacije ne postoji."));
 
+        Rezervacija rez = stavka.getRezervacija();
         if (stavka.getStatusStavke() == StatusStavke.NA_CEKANJU
-                && stavka.getDatumTermina().isBefore(LocalDate.now())) {
+                && rez.getDatumTermina().isBefore(LocalDate.now())) {
             stavka.setStatusStavke(StatusStavke.ISTEKLA);
-            preracunajStatusRezervacije(stavka.getRezervacija());
-            rezervacije.save(stavka.getRezervacija());
+            preracunajStatusRezervacije(rez);
+            rezervacije.save(rez);
             throw new StatusTranzicijaNijeDozvoljenaException(
-                    "Termin za stavku (id: " + stavkaId + ") je u međuvremenu istekao (datum "
-                    + stavka.getDatumTermina() + " je već prošao), pa je automatski označena kao istekla "
+                    "Termin za stavku je u međuvremenu istekao (datum "
+                    + rez.getDatumTermina() + " je već prošao), pa je automatski označena kao istekla "
                     + "i više se ne može odobriti ni odbiti.");
         }
 
         if (stavka.getStatusStavke() != StatusStavke.NA_CEKANJU) {
             throw new StatusTranzicijaNijeDozvoljenaException(
-                    "Stavka (id: " + stavkaId + ") je već obrađena (trenutni status: " + stavka.getStatusStavke() + ").");
+                    "Stavka je već obrađena (trenutni status: " + stavka.getStatusStavke() + ").");
         }
 
         if (noviStatus == StatusStavke.ODOBRENA) {
             Sala sala = sale.findByIdForUpdate(stavka.getSala().getId())
                     .orElseThrow(() -> new ResursNijePronadjenException(
-                            "Sala sa id " + stavka.getSala().getId() + " ne postoji."));
+                            "Sala ne postoji."));
             int vecZauzeto = rezervacije.zauzetoOsobaUTerminu(
-                    sala.getId(), stavka.getDatumTermina(), stavka.getVremeOd(), stavka.getVremeDo(), stavka.getId());
+                    sala.getId(), rez.getDatumTermina(), rez.getVremeOd(), rez.getVremeDo(), stavka.getId());
             if (vecZauzeto + stavka.getBrojOsoba() > sala.getKapacitet()) {
                 throw new TerminZauzetException(
                         sala.getNaziv() + " u međuvremenu nema dovoljno slobodnog mesta za ovaj "
                         + "termin (slobodno: " + Math.max(sala.getKapacitet() - vecZauzeto, 0)
                         + " od " + sala.getKapacitet() + ", traženo: " + stavka.getBrojOsoba()
                         + "), pa stavku nije moguće odobriti. " + opisZauzetostiZaPoruku(
-                                sala.getId(), stavka.getDatumTermina(), stavka.getVremeOd(),
-                                stavka.getVremeDo(), stavka.getId()));
+                                sala.getId(), rez.getDatumTermina(), rez.getVremeOd(),
+                                rez.getVremeDo(), stavka.getId()));
             }
         }
 
         stavka.setStatusStavke(noviStatus);
         stavkeRepo.save(stavka);
 
-        Rezervacija r = stavka.getRezervacija();
-        preracunajStatusRezervacije(r);
-        rezervacije.save(r);
+        preracunajStatusRezervacije(rez);
+        rezervacije.save(rez);
 
         log.info("Stavka (id: {}) rezervacije (id: {}) postavljena na status {}. Status rezervacije: {}.",
-                stavkaId, r.getIdRezervacije(), noviStatus, r.getStatus());
+                stavkaId, rez.getId(), noviStatus, rez.getStatus());
 
-        return mapper.toDto(r);
+        return mapper.toDto(rez);
     }
 
     @Transactional
@@ -391,9 +396,10 @@ public class RezervacijaService {
     @Transactional
     public RezervacijaDto odbijStavkuSaRazlogom(Long stavkaId, String razlog) {
         StavkaRezervacije stavka = stavkeRepo.findById(stavkaId)
-                .orElseThrow(() -> new ResursNijePronadjenException("Stavka rezervacije sa id " + stavkaId + " ne postoji."));
-        String opisTermina = stavka.getSala().getNaziv() + ", " + stavka.getDatumTermina()
-                + " " + stavka.getVremeOd() + "-" + stavka.getVremeDo();
+                .orElseThrow(() -> new ResursNijePronadjenException("Stavka rezervacije ne postoji."));
+        Rezervacija rezStavke = stavka.getRezervacija();
+        String opisTermina = stavka.getSala().getNaziv() + ", " + rezStavke.getDatumTermina()
+                + " " + rezStavke.getVremeOd() + "-" + rezStavke.getVremeDo();
         RezervacijaDto dto = azurirajStatusStavke(stavkaId, StatusStavke.ODBIJENA);
         Rezervacija r = stavka.getRezervacija();
         posaljiMejlOOdbijanju(r.getKorisnik(), nazivSvrheZaMejl(r), razlog, opisTermina);
@@ -407,6 +413,16 @@ public class RezervacijaService {
         }
         if (svrha instanceof Sastanak s) {
             return s.getTema();
+        }
+        if (svrha instanceof ZavrsniRad z) {
+            return "odbrana završnog rada \"" + z.getNazivTeme() + "\"";
+        }
+        if (svrha instanceof Nastava n) {
+            String vrsta = n.getVrsta() == VrstaNastave.PREDAVANJE ? "predavanje" : "vežbe";
+            return "nastava (" + vrsta + ")";
+        }
+        if (svrha instanceof Ispit i) {
+            return "ispit (" + i.getTip().name().toLowerCase().replace('_', ' ') + ")";
         }
         return "vaša rezervacija";
     }
@@ -430,7 +446,7 @@ public class RezervacijaService {
                   <td bgcolor="#002145" style="background-color:#002145 !important;padding:20px 28px;border-radius:16px 16px 0 0;">
                     <table role="presentation" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td bgcolor="#11C098" style="width:32px;height:32px;background-color:#11C098 !important;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,sans-serif;font-weight:bold;font-size:13px;color:#002145 !important;">FON</td>
+                        <td bgcolor="#11C098" style="width:40px;height:40px;background-color:#11C098 !important;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;color:#002145 !important;">ФОН</td>
                         <td style="padding-left:10px;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;color:#ffffff !important;">Rezervacija sala</td>
                       </tr>
                     </table>
@@ -483,7 +499,7 @@ public class RezervacijaService {
 
         if (r.getStatus() == StatusRezervacije.OTKAZANA) {
             throw new StatusTranzicijaNijeDozvoljenaException(
-                    "Rezervacija (id: " + id + ") je otkazana i njen status se više ne može menjati.");
+                    "Rezervacija je otkazana i njen status se više ne može menjati.");
         }
 
         StatusStavke statusStavke = switch (noviStatus) {
@@ -499,12 +515,13 @@ public class RezervacijaService {
                     .distinct()
                     .sorted()
                     .forEach(salaId -> sale.findByIdForUpdate(salaId)
-                    .orElseThrow(() -> new ResursNijePronadjenException("Sala sa id " + salaId + " ne postoji.")));
+                    .orElseThrow(() -> new ResursNijePronadjenException("Sala ne postoji.")));
         }
 
+        boolean terminIstekao = r.getDatumTermina().isBefore(LocalDate.now());
+
         for (StavkaRezervacije stavka : r.getStavke()) {
-            if (stavka.getStatusStavke() == StatusStavke.NA_CEKANJU
-                    && stavka.getDatumTermina().isBefore(LocalDate.now())) {
+            if (stavka.getStatusStavke() == StatusStavke.NA_CEKANJU && terminIstekao) {
                 stavka.setStatusStavke(StatusStavke.ISTEKLA);
                 continue;
             }
@@ -514,18 +531,18 @@ public class RezervacijaService {
             if (vecObradjena) {
                 continue;
             }
-            int vecZauzeto = rezervacije.zauzetoOsobaUTerminu(stavka.getSala().getId(), stavka.getDatumTermina(),
-                    stavka.getVremeOd(), stavka.getVremeDo(), stavka.getId());
+            int vecZauzeto = rezervacije.zauzetoOsobaUTerminu(stavka.getSala().getId(), r.getDatumTermina(),
+                    r.getVremeOd(), r.getVremeDo(), stavka.getId());
             if (noviStatus == StatusRezervacije.ODOBRENA
                     && vecZauzeto + stavka.getBrojOsoba() > stavka.getSala().getKapacitet()) {
                 throw new TerminZauzetException(
                         stavka.getSala().getNaziv() + " u međuvremenu nema dovoljno slobodnog mesta za termin "
-                        + stavka.getDatumTermina() + " " + stavka.getVremeOd() + "-" + stavka.getVremeDo()
+                        + r.getDatumTermina() + " " + r.getVremeOd() + "-" + r.getVremeDo()
                         + " (slobodno: " + Math.max(stavka.getSala().getKapacitet() - vecZauzeto, 0)
                         + " od " + stavka.getSala().getKapacitet() + ", traženo: " + stavka.getBrojOsoba()
                         + "), pa rezervaciju nije moguće odobriti u celosti. " + opisZauzetostiZaPoruku(
-                                stavka.getSala().getId(), stavka.getDatumTermina(), stavka.getVremeOd(),
-                                stavka.getVremeDo(), stavka.getId()));
+                                stavka.getSala().getId(), r.getDatumTermina(), r.getVremeOd(),
+                                r.getVremeDo(), stavka.getId()));
             }
             stavka.setStatusStavke(statusStavke);
         }
@@ -575,11 +592,12 @@ public class RezervacijaService {
         proveriVlasnistvoIliAdministraciju(r.getKorisnik().getId());
         
         boolean nesteklo = false;
-        for (StavkaRezervacije stavka : r.getStavke()) {
-            if (stavka.getStatusStavke() == StatusStavke.NA_CEKANJU
-                    && stavka.getDatumTermina().isBefore(LocalDate.now())) {
-                stavka.setStatusStavke(StatusStavke.ISTEKLA);
-                nesteklo = true;
+        if (r.getDatumTermina().isBefore(LocalDate.now())) {
+            for (StavkaRezervacije stavka : r.getStavke()) {
+                if (stavka.getStatusStavke() == StatusStavke.NA_CEKANJU) {
+                    stavka.setStatusStavke(StatusStavke.ISTEKLA);
+                    nesteklo = true;
+                }
             }
         }
         if (nesteklo) {
@@ -587,11 +605,11 @@ public class RezervacijaService {
         }
 
         if (r.getStatus() == StatusRezervacije.OTKAZANA) {
-            throw new StatusTranzicijaNijeDozvoljenaException("Rezervacija (id: " + id + ") je već otkazana.");
+            throw new StatusTranzicijaNijeDozvoljenaException("Rezervacija je već otkazana.");
         }
         if (r.getStatus() == StatusRezervacije.ISTEKLA) {
             throw new StatusTranzicijaNijeDozvoljenaException(
-                    "Rezervacija (id: " + id + ") je istekla (datum termina je prošao) i ne može se otkazati.");
+                    "Rezervacija je istekla (datum termina je prošao) i ne može se otkazati.");
         }
 
         for (StavkaRezervacije stavka : r.getStavke()) {
@@ -610,30 +628,30 @@ public class RezervacijaService {
     @Transactional
     public RezervacijaDto otkaziStavku(Long stavkaId) {
         StavkaRezervacije stavka = stavkeRepo.findById(stavkaId)
-                .orElseThrow(() -> new ResursNijePronadjenException("Stavka rezervacije sa id " + stavkaId + " ne postoji."));
+                .orElseThrow(() -> new ResursNijePronadjenException("Stavka rezervacije ne postoji."));
 
         Rezervacija r = stavka.getRezervacija();
         proveriVlasnistvoIliAdministraciju(r.getKorisnik().getId());
 
         if (stavka.getStatusStavke() == StatusStavke.NA_CEKANJU
-                && stavka.getDatumTermina().isBefore(LocalDate.now())) {
+                && r.getDatumTermina().isBefore(LocalDate.now())) {
             stavka.setStatusStavke(StatusStavke.ISTEKLA);
             preracunajStatusRezervacije(r);
             rezervacije.save(r);
             throw new StatusTranzicijaNijeDozvoljenaException(
-                    "Termin za stavku (id: " + stavkaId + ") je u međuvremenu istekao i više se ne može otkazati.");
+                    "Termin za stavku je u međuvremenu istekao i više se ne može otkazati.");
         }
 
         if (stavka.getStatusStavke() == StatusStavke.OTKAZANA) {
-            throw new StatusTranzicijaNijeDozvoljenaException("Stavka (id: " + stavkaId + ") je već otkazana.");
+            throw new StatusTranzicijaNijeDozvoljenaException("Stavka je već otkazana.");
         }
         if (stavka.getStatusStavke() == StatusStavke.ODBIJENA) {
             throw new StatusTranzicijaNijeDozvoljenaException(
-                    "Stavka (id: " + stavkaId + ") je već odbijena i ne može se otkazati.");
+                    "Stavka je već odbijena i ne može se otkazati.");
         }
         if (stavka.getStatusStavke() == StatusStavke.ISTEKLA) {
             throw new StatusTranzicijaNijeDozvoljenaException(
-                    "Stavka (id: " + stavkaId + ") je istekla (datum termina je prošao) i ne može se otkazati.");
+                    "Stavka je istekla (datum termina je prošao) i ne može se otkazati.");
         }
 
         stavka.setStatusStavke(StatusStavke.OTKAZANA);
@@ -642,14 +660,14 @@ public class RezervacijaService {
         preracunajStatusRezervacije(r);
         rezervacije.save(r);
 
-        log.info("Stavka (id: {}) rezervacije (id: {}) otkazana.", stavkaId, r.getIdRezervacije());
+        log.info("Stavka (id: {}) rezervacije (id: {}) otkazana.", stavkaId, r.getId());
 
         return mapper.toDto(r);
     }
 
     private Rezervacija pronadjiIliBaciGresku(Long id) {
         return rezervacije.findById(id)
-                .orElseThrow(() -> new ResursNijePronadjenException("Rezervacija sa id " + id + " ne postoji."));
+                .orElseThrow(() -> new ResursNijePronadjenException("Rezervacija ne postoji."));
     }
 
     private void proveriVlasnistvoIliAdministraciju(Long vlasnikId) {

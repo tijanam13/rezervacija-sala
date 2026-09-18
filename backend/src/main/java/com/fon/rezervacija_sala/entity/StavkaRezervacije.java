@@ -1,8 +1,6 @@
 package com.fon.rezervacija_sala.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
-import java.time.LocalTime;
 
 @Entity
 @Table(name = "stavka_rezervacije")
@@ -14,15 +12,6 @@ public class StavkaRezervacije {
 
     @Version
     private Long verzija;
- 
-    @Column(nullable = false)
-    private LocalDate datumTermina;
- 
-    @Column(nullable = false)
-    private LocalTime vremeOd;
- 
-    @Column(nullable = false)
-    private LocalTime vremeDo;
  
     @Column(nullable = false)
     private Integer brojOsoba;
@@ -49,13 +38,9 @@ public class StavkaRezervacije {
         this.id = id;
     }
  
-    public StavkaRezervacije(Long id, LocalDate datumTermina, LocalTime vremeOd, LocalTime vremeDo,
-                              Integer brojOsoba, StatusStavke statusStavke, String opis,
+    public StavkaRezervacije(Long id, Integer brojOsoba, StatusStavke statusStavke, String opis,
                               Rezervacija rezervacija, Sala sala) {
         this.id = id;
-        this.datumTermina = datumTermina;
-        this.vremeOd = vremeOd;
-        this.vremeDo = vremeDo;
         this.brojOsoba = brojOsoba;
         this.statusStavke = statusStavke;
         this.opis = opis;
@@ -73,30 +58,6 @@ public class StavkaRezervacije {
 
     public Long getVerzija() {
         return verzija;
-    }
- 
-    public LocalDate getDatumTermina() {
-        return datumTermina;
-    }
- 
-    public void setDatumTermina(LocalDate datumTermina) {
-        this.datumTermina = datumTermina;
-    }
- 
-    public LocalTime getVremeOd() {
-        return vremeOd;
-    }
- 
-    public void setVremeOd(LocalTime vremeOd) {
-        this.vremeOd = vremeOd;
-    }
- 
-    public LocalTime getVremeDo() {
-        return vremeDo;
-    }
- 
-    public void setVremeDo(LocalTime vremeDo) {
-        this.vremeDo = vremeDo;
     }
  
     public Integer getBrojOsoba() {

@@ -5,7 +5,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 public class RezervacijaDto {
@@ -13,6 +15,15 @@ public class RezervacijaDto {
     private Long id;
 
     private LocalDateTime datumKreiranja;
+
+    @NotNull(message = "Datum termina je obavezan.")
+    private LocalDate datumTermina;
+
+    @NotNull(message = "Vreme početka termina je obavezno.")
+    private LocalTime vremeOd;
+
+    @NotNull(message = "Vreme završetka termina je obavezno.")
+    private LocalTime vremeDo;
 
     private StatusRezervacije status;
 
@@ -32,10 +43,14 @@ public class RezervacijaDto {
     public RezervacijaDto() {
     }
 
-    public RezervacijaDto(Long id, LocalDateTime datumKreiranja, StatusRezervacije status, String napomena,
+    public RezervacijaDto(Long id, LocalDateTime datumKreiranja, LocalDate datumTermina, LocalTime vremeOd,
+            LocalTime vremeDo, StatusRezervacije status, String napomena,
             KorisnikDto korisnik, SvrhaRezervacijeDto svrha, List<StavkaRezervacijeDto> stavke) {
         this.id = id;
         this.datumKreiranja = datumKreiranja;
+        this.datumTermina = datumTermina;
+        this.vremeOd = vremeOd;
+        this.vremeDo = vremeDo;
         this.status = status;
         this.napomena = napomena;
         this.korisnik = korisnik;
@@ -57,6 +72,30 @@ public class RezervacijaDto {
 
     public void setDatumKreiranja(LocalDateTime datumKreiranja) {
         this.datumKreiranja = datumKreiranja;
+    }
+
+    public LocalDate getDatumTermina() {
+        return datumTermina;
+    }
+
+    public void setDatumTermina(LocalDate datumTermina) {
+        this.datumTermina = datumTermina;
+    }
+
+    public LocalTime getVremeOd() {
+        return vremeOd;
+    }
+
+    public void setVremeOd(LocalTime vremeOd) {
+        this.vremeOd = vremeOd;
+    }
+
+    public LocalTime getVremeDo() {
+        return vremeDo;
+    }
+
+    public void setVremeDo(LocalTime vremeDo) {
+        this.vremeDo = vremeDo;
     }
 
     public StatusRezervacije getStatus() {

@@ -15,7 +15,7 @@ import Korisnici from "@/pages/admin/Korisnici";
 import Sale from "@/pages/admin/Sale";
 import Sifarnici from "@/pages/admin/Sifarnici";
 import Zaposleni from "@/pages/admin/Zaposleni";
-import OdobravanjeRezervacija from "./pages/osoblje/OdobravanjeRezervacija";
+import OdobravanjeRezervacija from "./pages/administracija/OdobravanjeRezervacija";
 
 function App() {
   return (

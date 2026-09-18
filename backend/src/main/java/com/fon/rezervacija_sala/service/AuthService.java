@@ -3,18 +3,12 @@ package com.fon.rezervacija_sala.service;
 import com.fon.rezervacija_sala.dto.AuthResponse;
 import com.fon.rezervacija_sala.dto.KorisnikDto;
 import com.fon.rezervacija_sala.dto.LoginRequest;
-import com.fon.rezervacija_sala.dto.RegisterPredavacRequest;
-import com.fon.rezervacija_sala.dto.RegisterSluzbenikRequest;
-import com.fon.rezervacija_sala.entity.Katedra;
+import com.fon.rezervacija_sala.dto.RegisterRequest;
 import com.fon.rezervacija_sala.entity.Korisnik;
-import com.fon.rezervacija_sala.entity.Predavac;
 import com.fon.rezervacija_sala.entity.ResetLozinkeToken;
-import com.fon.rezervacija_sala.entity.Sluzba;
-import com.fon.rezervacija_sala.entity.Sluzbenik;
 import com.fon.rezervacija_sala.entity.StatusNaloga;
 import com.fon.rezervacija_sala.entity.VerifikacioniToken;
 import com.fon.rezervacija_sala.entity.Zaposleni;
-import com.fon.rezervacija_sala.entity.Zvanje;
 import com.fon.rezervacija_sala.exception.EmailZauzetException;
 import com.fon.rezervacija_sala.exception.NalogNijeAktivanException;
 import com.fon.rezervacija_sala.exception.NalogZakljucanException;
@@ -87,47 +81,28 @@ public class AuthService {
     }
 
     @Transactional
-    public KorisnikDto registerPredavac(RegisterPredavacRequest req) {
-        proveriDaEmailNijeZauzet(req.getEmail());
+    public KorisnikDto registerKorisnik(RegisterRequest req) {
+        Zaposleni zaposleni = predavci.findByPoslovniEmail(req.getEmail())
+                .map(p -> (Zaposleni) p)
+                .or(() -> sluzbenici.findByPoslovniEmail(req.getEmail()).map(s -> (Zaposleni) s))
+                .orElseThrow(() -> new ResursNijePronadjenException(
+                        "Ne postoji profil predavača ni službenika sa ovom email adresom. "
+                        + "Obratite se administratoru da vas prvo unese u sistem."));
 
-        Predavac zaposleni = new Predavac();
-        zaposleni.setIme(req.getIme());
-        zaposleni.setPrezime(req.getPrezime());
-        zaposleni.setBrojTelefona(req.getBrojTelefona());
-        zaposleni.setBrojRadneKnjizice(req.getBrojRadneKnjizice());
-        zaposleni.setTitula(req.getTitula());
-        zaposleni.setTerminKonsultacija(req.getTerminKonsultacija());
-        zaposleni.setKatedra(new Katedra(req.getKatedraId()));
-        zaposleni.setZvanje(new Zvanje(req.getZvanjeId()));
-        predavci.save(zaposleni);
+        proveriDaZaposleniNemaNalog(zaposleni.getId());
 
         Korisnik k = novKorisnikNalog(req.getEmail(), req.getLozinka(), zaposleni);
 
         posaljiVerifikacioniEmail(k);
-        log.info("Registrovan novi Predavač nalog (email: {}), čeka verifikaciju email-a.", k.getEmail());
+        log.info("Registrovan novi korisnički nalog (email: {}), čeka verifikaciju email-a.", k.getEmail());
 
         return korisnikMapper.toDto(k);
     }
 
-    @Transactional
-    public KorisnikDto registerSluzbenik(RegisterSluzbenikRequest req) {
-        proveriDaEmailNijeZauzet(req.getEmail());
-
-        Sluzbenik zaposleni = new Sluzbenik();
-        zaposleni.setIme(req.getIme());
-        zaposleni.setPrezime(req.getPrezime());
-        zaposleni.setBrojTelefona(req.getBrojTelefona());
-        zaposleni.setBrojRadneKnjizice(req.getBrojRadneKnjizice());
-        zaposleni.setPozicija(req.getPozicija());
-        zaposleni.setSluzba(new Sluzba(req.getSluzbaId()));
-        sluzbenici.save(zaposleni);
-
-        Korisnik k = novKorisnikNalog(req.getEmail(), req.getLozinka(), zaposleni);
-
-        posaljiVerifikacioniEmail(k);
-        log.info("Registrovan novi Službenik nalog (email: {}), čeka verifikaciju email-a.", k.getEmail());
-
-        return korisnikMapper.toDto(k);
+    private void proveriDaZaposleniNemaNalog(Long zaposleniId) {
+        if (korisnici.findByZaposleniId(zaposleniId).isPresent()) {
+            throw new EmailZauzetException("Email adresa je već u upotrebi.");
+        }
     }
 
     private Korisnik novKorisnikNalog(String email, String lozinka, Zaposleni zaposleni) {
@@ -139,12 +114,6 @@ public class AuthService {
         k.setZaposleni(zaposleni);
         korisnici.save(k);
         return k;
-    }
-
-    private void proveriDaEmailNijeZauzet(String email) {
-        if (korisnici.findByEmail(email).isPresent()) {
-            throw new EmailZauzetException("Email adresa je već u upotrebi.");
-        }
     }
 
     private void posaljiVerifikacioniEmail(Korisnik k) {
@@ -178,7 +147,7 @@ public class AuthService {
                   <td bgcolor="#002145" style="background-color:#002145 !important;padding:20px 28px;border-radius:16px 16px 0 0;">
                     <table role="presentation" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td bgcolor="#11C098" style="width:32px;height:32px;background-color:#11C098 !important;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,sans-serif;font-weight:bold;font-size:13px;color:#002145 !important;">FON</td>
+                        <td bgcolor="#11C098" style="width:40px;height:40px;background-color:#11C098 !important;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;color:#002145 !important;">ФОН</td>
                         <td style="padding-left:10px;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;color:#ffffff !important;">Rezervacija sala</td>
                       </tr>
                     </table>
@@ -238,7 +207,7 @@ public class AuthService {
         return izgradiAuthResponse(k);
     }
 
-    @Transactional
+    @Transactional(dontRollbackOn = AuthenticationException.class)
     public AuthResponse login(LoginRequest req) {
         Korisnik postojeci = korisnici.findByEmail(req.getEmail()).orElse(null);
 
@@ -248,7 +217,7 @@ public class AuthService {
             log.warn("Pokušaj prijave na privremeno zaključan nalog (email: {}).", req.getEmail());
             throw new NalogZakljucanException(
                     "Nalog je privremeno zaključan zbog previše neuspešnih pokušaja prijave. "
-                    + "Pokušajte ponovo za oko " + preostaloMinuta + " min.");
+                    + "Pokušajte ponovo za " + preostaloMinuta + " min.");
         }
 
         try {
@@ -274,6 +243,11 @@ public class AuthService {
         Korisnik k = korisnici.findByEmailForUpdate(email).orElse(null);
         if (k == null) {
             return;
+        }
+
+        if (k.getZakljucanDo() != null && !k.isTrenutnoZakljucan()) {
+            k.setBrojNeuspesnihPokusaja(0);
+            k.setZakljucanDo(null);
         }
 
         int noviBroj = k.getBrojNeuspesnihPokusaja() + 1;
@@ -365,7 +339,7 @@ public class AuthService {
                   <td bgcolor="#002145" style="background-color:#002145 !important;padding:20px 28px;border-radius:16px 16px 0 0;">
                     <table role="presentation" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td bgcolor="#11C098" style="width:32px;height:32px;background-color:#11C098 !important;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,sans-serif;font-weight:bold;font-size:13px;color:#002145 !important;">FON</td>
+                        <td bgcolor="#11C098" style="width:40px;height:40px;background-color:#11C098 !important;border-radius:8px;text-align:center;vertical-align:middle;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;color:#002145 !important;">ФОН</td>
                         <td style="padding-left:10px;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;color:#ffffff !important;">Rezervacija sala</td>
                       </tr>
                     </table>

@@ -7,6 +7,7 @@ import {
   Pencil,
   Trash2,
   AlertCircle,
+  Search,
 } from "lucide-react";
 import { NavBar } from "@/components/layout/NavBar";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,9 @@ const TAB_STIL: Record<
   {
     naziv: string;
     nazivJednine: string;
+    nazivGenitiv: string;
     nazivAkuzativ: string;
+    nastavak: "a" | "o";
     ikona: typeof Building2;
     aktivniTab: string;
     bedz: string;
@@ -58,7 +61,9 @@ const TAB_STIL: Record<
   katedre: {
     naziv: "Katedre",
     nazivJednine: "katedra",
+    nazivGenitiv: "katedre",
     nazivAkuzativ: "katedru",
+    nastavak: "a",
     ikona: Building2,
     aktivniTab: "bg-fon-blue text-white shadow-sm",
     bedz: "bg-fon-blue/10 text-fon-blue",
@@ -68,7 +73,9 @@ const TAB_STIL: Record<
   zvanja: {
     naziv: "Zvanja",
     nazivJednine: "zvanje",
+    nazivGenitiv: "zvanja",
     nazivAkuzativ: "zvanje",
+    nastavak: "o",
     ikona: GraduationCap,
     aktivniTab: "bg-fon-purple text-white shadow-sm",
     bedz: "bg-fon-purple/10 text-fon-purple",
@@ -78,7 +85,9 @@ const TAB_STIL: Record<
   sluzbe: {
     naziv: "Službe",
     nazivJednine: "služba",
+    nazivGenitiv: "službe",
     nazivAkuzativ: "službu",
+    nastavak: "a",
     ikona: Briefcase,
     aktivniTab: "bg-fon-pink text-white shadow-sm",
     bedz: "bg-fon-pink/10 text-fon-pink",
@@ -94,6 +103,10 @@ interface Stavka {
 }
 
 const PRAZNA_FORMA = { naziv: "", opis: "" };
+
+function velikoPrvoSlovo(tekst: string): string {
+  return tekst.charAt(0).toUpperCase() + tekst.slice(1);
+}
 
 export default function Sifarnici() {
   const [tab, setTab] = useState<Tab>("katedre");
@@ -187,7 +200,7 @@ export default function Sifarnici() {
 
   async function sacuvaj() {
     if (!forma.naziv.trim()) {
-      setFormaGreska(`Naziv (${TAB_STIL[tab].nazivJednine}) je obavezan.`);
+      setFormaGreska(`Naziv ${TAB_STIL[tab].nazivGenitiv} je obavezan.`);
       return;
     }
 
@@ -204,11 +217,15 @@ export default function Sifarnici() {
       if (stavkaKojaSeUredjuje) {
         const azurirana = await azuriraj(stavkaKojaSeUredjuje.id, dto);
         postaviListu(lista.map((s) => (s.id === azurirana.id ? azurirana : s)));
-        javiUspeh(`Stavka "${azurirana.naziv}" je uspešno izmenjena.`);
+        javiUspeh(
+          `${velikoPrvoSlovo(TAB_STIL[tab].nazivJednine)} "${azurirana.naziv}" je uspešno izmenjen${TAB_STIL[tab].nastavak}.`,
+        );
       } else {
         const nova = await kreiraj(dto);
         postaviListu([...lista, nova]);
-        javiUspeh(`Stavka "${nova.naziv}" je uspešno dodata.`);
+        javiUspeh(
+          `${velikoPrvoSlovo(TAB_STIL[tab].nazivJednine)} "${nova.naziv}" je uspešno dodat${TAB_STIL[tab].nastavak}.`,
+        );
       }
       setDijalogOtvoren(false);
     } catch (err) {
@@ -231,7 +248,9 @@ export default function Sifarnici() {
     try {
       await obrisi(zaBrisanje.id);
       postaviListu(lista.filter((s) => s.id !== zaBrisanje.id));
-      javiUspeh(`Stavka "${zaBrisanje.naziv}" je obrisana.`);
+      javiUspeh(
+        `${velikoPrvoSlovo(TAB_STIL[tab].nazivJednine)} "${zaBrisanje.naziv}" je obrisan${TAB_STIL[tab].nastavak}.`,
+      );
       setZaBrisanje(null);
     } catch (err) {
       setBrisanjeGreska(izvuciPorukuGreske(err));
@@ -242,6 +261,11 @@ export default function Sifarnici() {
 
   const stilAktivnogTaba = TAB_STIL[tab];
   const listaAktivnogTaba = akcije[tab].lista;
+
+  const [pretraga, setPretraga] = useState("");
+  const listaFiltrirana = listaAktivnogTaba.filter((s) =>
+    s.naziv.toLowerCase().includes(pretraga.toLowerCase()),
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -266,7 +290,10 @@ export default function Sifarnici() {
               <button
                 key={t}
                 type="button"
-                onClick={() => setTab(t)}
+                onClick={() => {
+                  setTab(t);
+                  setPretraga("");
+                }}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-colors ${
                   tab === t
                     ? stil.aktivniTab
@@ -293,7 +320,19 @@ export default function Sifarnici() {
           </p>
         ) : (
           <>
-            <div className="mb-4 flex justify-end">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="relative max-w-xs flex-1">
+                <Search
+                  size={16}
+                  className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"
+                />
+                <Input
+                  placeholder={`Pretraži ${stilAktivnogTaba.naziv.toLowerCase()}...`}
+                  value={pretraga}
+                  onChange={(e) => setPretraga(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
               <Button
                 onClick={otvoriDodavanje}
                 className={stilAktivnogTaba.dugme}
@@ -303,9 +342,11 @@ export default function Sifarnici() {
               </Button>
             </div>
 
-            {listaAktivnogTaba.length === 0 ? (
+            {listaFiltrirana.length === 0 ? (
               <p className="py-10 text-center text-sm text-gray-500">
-                Nema stavki za prikaz.
+                {listaAktivnogTaba.length === 0
+                  ? "Nema stavki za prikaz."
+                  : "Nema stavki koje odgovaraju pretrazi."}
               </p>
             ) : (
               <div className="overflow-hidden rounded-xl border border-gray-100 bg-white">
@@ -318,7 +359,7 @@ export default function Sifarnici() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {listaAktivnogTaba.map((s) => (
+                    {listaFiltrirana.map((s) => (
                       <tr key={s.id}>
                         <td className="px-4 py-3 font-medium text-fon-dark">
                           {s.naziv}
@@ -377,14 +418,19 @@ export default function Sifarnici() {
           </DialogHeader>
 
           <div className="flex flex-col gap-3">
-            <Input
-              placeholder="Naziv"
-              value={forma.naziv}
-              onChange={(e) =>
-                setForma((f) => ({ ...f, naziv: e.target.value }))
-              }
-              className="border-gray-200 bg-gray-50"
-            />
+            <div>
+              <label className="mb-1 block text-sm text-gray-600">
+                Naziv <span className="text-red-500">*</span>
+              </label>
+              <Input
+                placeholder="Naziv"
+                value={forma.naziv}
+                onChange={(e) =>
+                  setForma((f) => ({ ...f, naziv: e.target.value }))
+                }
+                className="border-gray-200 bg-gray-50"
+              />
+            </div>
             <Input
               placeholder="Opis (opciono)"
               value={forma.opis}

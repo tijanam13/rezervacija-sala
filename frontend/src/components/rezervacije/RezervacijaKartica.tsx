@@ -18,9 +18,6 @@ export function RezervacijaKartica({
   pokaziStrelicu = false,
 }: RezervacijaKarticaProps) {
   const stilRez = getStatusStyle(r.status ?? "NA_CEKANJU");
-  const najraniji = [...r.stavke].sort((a, b) =>
-    a.datumTermina.localeCompare(b.datumTermina),
-  )[0];
 
   return (
     <button
@@ -38,14 +35,9 @@ export function RezervacijaKartica({
             </>
           )}
           {r.stavke.length}{" "}
-          {r.stavke.length === 1 ? "sala/termin" : "sale/termina"}
-          {najraniji && (
-            <>
-              {" "}
-              · {prikaziVlasnika ? "najskoriji: " : ""}
-              {formatDatum(najraniji.datumTermina)}
-            </>
-          )}
+          {r.stavke.length === 1 ? "sala/termin" : "sale, isti termin"}
+          {" · "}
+          {formatDatum(r.datumTermina)}
         </p>
       </div>
       <div className="flex items-center gap-3">

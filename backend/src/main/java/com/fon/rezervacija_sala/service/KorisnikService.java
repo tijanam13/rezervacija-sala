@@ -73,7 +73,7 @@ public class KorisnikService {
 
         if (noviStatus == StatusNaloga.BLOKIRAN && id.equals(trenutniKorisnik().getId())) {
             throw new NevalidanZahtevException(
-                    "Ne možete sami sebe blokirati.");
+                    "Ne možete blokirati svoj nalog.");
         }
 
         if (noviStatus != StatusNaloga.AKTIVAN && k.imaUlogu(NazivUloge.ADMIN)) {
@@ -134,14 +134,14 @@ public class KorisnikService {
     private void proveriDaNijePoslednjiAdmin(Korisnik k) {
         if (korisnici.brojKorisnikaSaUlogom(NazivUloge.ADMIN) <= 1) {
             throw new StatusTranzicijaNijeDozvoljenaException(
-                    "Korisnik (id: " + k.getId() + ") je poslednji administratorski nalog u sistemu - "
+                    "Korisnik je poslednji administratorski nalog u sistemu - "
                     + "radnja nije dozvoljena.");
         }
     }
 
     private Korisnik pronadjiIliBaciGresku(Long id) {
         return korisnici.findById(id)
-                .orElseThrow(() -> new ResursNijePronadjenException("Korisnik sa id " + id + " ne postoji."));
+                .orElseThrow(() -> new ResursNijePronadjenException("Korisnik ne postoji."));
     }
 
     private Uloga pronadjiUloguIliBaciGresku(NazivUloge naziv) {

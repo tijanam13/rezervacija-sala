@@ -57,15 +57,15 @@ public class StavkaRezervacijeRepository implements AppRepository<StavkaRezervac
         }
     }
 
-    public List<StavkaRezervacije> findAktivneStavkeZaPeriod(LocalDate od, LocalDate doDatum) {
+    public List<StavkaRezervacije> findAktivneStavkeZaPeriod(LocalDate odDatum, LocalDate doDatum) {
         return entityManager.createQuery(
                 "SELECT st FROM StavkaRezervacije st "
                 + "JOIN FETCH st.sala "
                 + "JOIN FETCH st.rezervacija r "
                 + "JOIN FETCH r.svrha "
-                + "WHERE st.datumTermina BETWEEN :od AND :doDatum "
+                + "WHERE r.datumTermina BETWEEN :odDatum AND :doDatum "
                 + "AND st.statusStavke IN :aktivniStatusi", StavkaRezervacije.class)
-                .setParameter("od", od)
+                .setParameter("odDatum", odDatum)
                 .setParameter("doDatum", doDatum)
                 .setParameter("aktivniStatusi", List.of(StatusStavke.NA_CEKANJU, StatusStavke.ODOBRENA))
                 .getResultList();
@@ -74,9 +74,9 @@ public class StavkaRezervacijeRepository implements AppRepository<StavkaRezervac
     public List<StavkaRezervacije> findIstekleNaCekanju(LocalDate danas) {
         return entityManager.createQuery(
                 "SELECT st FROM StavkaRezervacije st "
-                + "JOIN FETCH st.rezervacija "
+                + "JOIN FETCH st.rezervacija r "
                 + "WHERE st.statusStavke = com.fon.rezervacija_sala.entity.StatusStavke.NA_CEKANJU "
-                + "AND st.datumTermina < :danas", StavkaRezervacije.class)
+                + "AND r.datumTermina < :danas", StavkaRezervacije.class)
                 .setParameter("danas", danas)
                 .getResultList();
     }

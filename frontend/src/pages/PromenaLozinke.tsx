@@ -48,7 +48,7 @@ export default function PromenaLozinke() {
             <CheckCircle2 size={28} className="text-fon-teal" />
           </div>
           <p className="text-sm text-gray-600">
-            Vaša lozinka je uspešno promenjena. Prijavite se novom lozinkom.
+            Vaša lozinka je uspešno promenjena. Prijavite se sa novom lozinkom.
           </p>
           <Button
             onClick={() => navigate("/prijava")}

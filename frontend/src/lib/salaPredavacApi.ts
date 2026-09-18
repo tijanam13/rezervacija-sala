@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import type { SalaDto, PredavacDto } from "@/types";
+import type { SalaDto, PredavacDto, SluzbenikDto } from "@/types";
 
 export async function fetchSale(): Promise<SalaDto[]> {
   const { data } = await api.get<SalaDto[]>("/sala");
@@ -8,5 +8,10 @@ export async function fetchSale(): Promise<SalaDto[]> {
 
 export async function fetchPredavaci(): Promise<PredavacDto[]> {
   const { data } = await api.get<PredavacDto[]>("/predavac");
+  return data;
+}
+
+export async function fetchSluzbenici(): Promise<SluzbenikDto[]> {
+  const { data } = await api.get<SluzbenikDto[]>("/sluzbenik");
   return data;
 }

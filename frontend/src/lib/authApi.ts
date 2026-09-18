@@ -12,28 +12,9 @@ export interface LoginZahtev {
   lozinka: string;
 }
 
-export interface RegistracijaPredavacZahtev {
-  ime: string;
-  prezime: string;
-  brojTelefona?: string;
-  brojRadneKnjizice: string;
+export interface RegistracijaZahtev {
   email: string;
   lozinka: string;
-  titula?: string;
-  terminKonsultacija?: string;
-  katedraId: number;
-  zvanjeId: number;
-}
-
-export interface RegistracijaSluzbenikZahtev {
-  ime: string;
-  prezime: string;
-  brojTelefona?: string;
-  brojRadneKnjizice: string;
-  email: string;
-  lozinka: string;
-  pozicija?: string;
-  sluzbaId: number;
 }
 
 export async function login(zahtev: LoginZahtev): Promise<AuthResponse> {
@@ -41,13 +22,8 @@ export async function login(zahtev: LoginZahtev): Promise<AuthResponse> {
   return data;
 }
 
-export async function registrujPredavaca(zahtev: RegistracijaPredavacZahtev) {
-  const { data } = await api.post("/auth/registracija/predavac", zahtev);
-  return data;
-}
-
-export async function registrujSluzbenika(zahtev: RegistracijaSluzbenikZahtev) {
-  const { data } = await api.post("/auth/registracija/sluzbenik", zahtev);
+export async function registrujKorisnika(zahtev: RegistracijaZahtev) {
+  const { data } = await api.post("/auth/registracija", zahtev);
   return data;
 }
 

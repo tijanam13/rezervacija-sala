@@ -80,7 +80,9 @@ export function SvrhaTipSelektor({
 }: SvrhaTipSelektorProps) {
   return (
     <div>
-      <label className="mb-2 block text-fon-navy">Svrha rezervacije</label>
+      <label className="mb-2 block text-fon-navy">
+        Svrha rezervacije <span className="text-red-500">*</span>
+      </label>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {(Object.keys(SVRHA_STIL) as Array<SvrhaRezervacijeDto["tip"]>).map(
           (tip) => {

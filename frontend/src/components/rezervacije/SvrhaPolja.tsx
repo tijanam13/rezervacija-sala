@@ -17,6 +17,7 @@ import type {
   PredavacDto,
 } from "@/types";
 import { SVRHA_STIL } from "./SvrhaTipSelektor";
+import { PretragaZaposlenog, type ZaposleniOpcija } from "./PretragaZaposlenog";
 
 const SELECT_PROPS = { side: "bottom" as const, alignItemWithTrigger: false };
 
@@ -42,11 +43,14 @@ const NAZIVI_TIPA_ISPITA: Record<TipIspita, string> = {
 export interface UcesnikForma {
   ucesnik: string;
   email: string;
+  zaposleniId: number | null;
+  rezim: "interni" | "eksterni";
 }
 
 interface SvrhaPoljaProps {
   tipSvrhe: SvrhaRezervacijeDto["tip"];
   predavaci: PredavacDto[];
+  zaposleniOpcije: ZaposleniOpcija[];
 
   semestar: number;
   setSemestar: (v: number) => void;
@@ -86,10 +90,13 @@ interface SvrhaPoljaProps {
 }
 
 export function SvrhaPolja(props: SvrhaPoljaProps) {
-  const { tipSvrhe, predavaci } = props;
+  const { tipSvrhe, predavaci, zaposleniOpcije } = props;
 
   function dodajUcesnika() {
-    props.setUcesnici((prev) => [...prev, { ucesnik: "", email: "" }]);
+    props.setUcesnici((prev) => [
+      ...prev,
+      { ucesnik: "", email: "", zaposleniId: null, rezim: "eksterni" },
+    ]);
   }
 
   function ukloniUcesnika(index: number) {
@@ -105,7 +112,9 @@ export function SvrhaPolja(props: SvrhaPoljaProps) {
         tipSvrhe === "ZAVRSNI_RAD") && (
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="mb-1 block text-fon-navy">Semestar</label>
+            <label className="mb-1 block text-fon-navy">
+              Semestar <span className="text-red-500">*</span>
+            </label>
             <Input
               className="border-2 border-gray-500 text-fon-navy"
               type="number"
@@ -116,7 +125,9 @@ export function SvrhaPolja(props: SvrhaPoljaProps) {
             />
           </div>
           <div className="flex-1">
-            <label className="mb-1 block text-fon-navy">Nivo studija</label>
+            <label className="mb-1 block text-fon-navy">
+              Nivo studija <span className="text-red-500">*</span>
+            </label>
             <Select
               value={props.nivoStudija}
               onValueChange={(v) =>
@@ -141,7 +152,9 @@ export function SvrhaPolja(props: SvrhaPoljaProps) {
       {tipSvrhe === "NASTAVA" && (
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="mb-1 block text-fon-navy">Vrsta</label>
+            <label className="mb-1 block text-fon-navy">
+              Vrsta <span className="text-red-500">*</span>
+            </label>
             <Select
               value={props.vrsta}
               onValueChange={(v) =>
@@ -185,7 +198,9 @@ export function SvrhaPolja(props: SvrhaPoljaProps) {
 
       {tipSvrhe === "ISPIT" && (
         <div>
-          <label className="mb-1 block text-fon-navy">Tip ispita</label>
+          <label className="mb-1 block text-fon-navy">
+            Tip ispita <span className="text-red-500">*</span>
+          </label>
           <Select
             value={props.tipIspita}
             onValueChange={(v) =>
@@ -207,7 +222,9 @@ export function SvrhaPolja(props: SvrhaPoljaProps) {
       {tipSvrhe === "ZAVRSNI_RAD" && (
         <>
           <div>
-            <label className="mb-1 block text-fon-navy">Naziv teme</label>
+            <label className="mb-1 block text-fon-navy">
+              Naziv teme <span className="text-red-500">*</span>
+            </label>
             <Input
               className="border-2 border-gray-500 text-fon-navy"
               value={props.nazivTeme}
@@ -215,7 +232,9 @@ export function SvrhaPolja(props: SvrhaPoljaProps) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-fon-navy">Student</label>
+            <label className="mb-1 block text-fon-navy">
+              Student <span className="text-red-500">*</span>
+            </label>
             <Input
               className="border-2 border-gray-500 text-fon-navy"
               value={props.student}
@@ -223,7 +242,9 @@ export function SvrhaPolja(props: SvrhaPoljaProps) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-fon-navy">Mentor</label>
+            <label className="mb-1 block text-fon-navy">
+              Mentor <span className="text-red-500">*</span>
+            </label>
             <Select
               value={props.mentorId}
               onValueChange={(v) => v !== null && props.setMentorId(v)}
@@ -249,7 +270,7 @@ export function SvrhaPolja(props: SvrhaPoljaProps) {
           </div>
           <div>
             <label className="mb-1 block text-fon-navy">
-              Komisija (tačno 3 člana)
+              Komisija (tačno 3 člana) <span className="text-red-500">*</span>
             </label>
             <div className="space-y-2">
               {[0, 1, 2].map((i) => (
@@ -290,7 +311,9 @@ export function SvrhaPolja(props: SvrhaPoljaProps) {
       {tipSvrhe === "SASTANAK" && (
         <>
           <div>
-            <label className="mb-1 block text-fon-navy">Tema</label>
+            <label className="mb-1 block text-fon-navy">
+              Tema <span className="text-red-500">*</span>
+            </label>
             <Input
               className="border-2 border-gray-500 text-fon-navy"
               value={props.tema}
@@ -306,44 +329,144 @@ export function SvrhaPolja(props: SvrhaPoljaProps) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-fon-navy">Učesnici</label>
-            <div className="space-y-2">
+            <label className="mb-1 block text-fon-navy">
+              Učesnici <span className="text-red-500">*</span>
+            </label>
+            <div className="space-y-3">
               {props.ucesnici.map((u, i) => (
-                <div key={i} className="flex gap-2">
-                  <Input
-                    className="border-2 border-gray-500 text-fon-navy"
-                    placeholder="Ime i prezime"
-                    value={u.ucesnik}
-                    onChange={(e) =>
-                      props.setUcesnici((prev) =>
-                        prev.map((x, idx) =>
-                          idx === i ? { ...x, ucesnik: e.target.value } : x,
-                        ),
-                      )
-                    }
-                  />
-                  <Input
-                    className="border-2 border-gray-500 text-fon-navy"
-                    placeholder="Email (opciono)"
-                    value={u.email}
-                    onChange={(e) =>
-                      props.setUcesnici((prev) =>
-                        prev.map((x, idx) =>
-                          idx === i ? { ...x, email: e.target.value } : x,
-                        ),
-                      )
-                    }
-                  />
-                  {props.ucesnici.length > 1 && (
-                    <Button
+                <div
+                  key={i}
+                  className="rounded-md border-2 border-gray-300 p-2"
+                >
+                  <div className="mb-2 flex gap-1">
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => ukloniUcesnika(i)}
+                      onClick={() =>
+                        props.setUcesnici((prev) =>
+                          prev.map((x, idx) =>
+                            idx === i
+                              ? {
+                                  ucesnik: "",
+                                  email: "",
+                                  zaposleniId: null,
+                                  rezim: "interni",
+                                }
+                              : x,
+                          ),
+                        )
+                      }
+                      className={`rounded px-2 py-1 text-xs font-medium ${
+                        u.rezim === "interni"
+                          ? "bg-fon-teal text-white"
+                          : "bg-gray-100 text-gray-500"
+                      }`}
                     >
-                      <Trash2 size={16} className="text-fon-coral" />
-                    </Button>
-                  )}
+                      Interni zaposleni
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        props.setUcesnici((prev) =>
+                          prev.map((x, idx) =>
+                            idx === i
+                              ? {
+                                  ucesnik: "",
+                                  email: "",
+                                  zaposleniId: null,
+                                  rezim: "eksterni",
+                                }
+                              : x,
+                          ),
+                        )
+                      }
+                      className={`rounded px-2 py-1 text-xs font-medium ${
+                        u.rezim === "eksterni"
+                          ? "bg-fon-teal text-white"
+                          : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      Eksterni gost
+                    </button>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {u.rezim === "interni" ? (
+                      <div className="flex-1">
+                        <PretragaZaposlenog
+                          opcije={zaposleniOpcije}
+                          izabranId={u.zaposleniId}
+                          izabranoIme={u.ucesnik}
+                          onIzaberi={(opcija) =>
+                            props.setUcesnici((prev) =>
+                              prev.map((x, idx) =>
+                                idx === i
+                                  ? {
+                                      ucesnik: `${opcija.ime} ${opcija.prezime}`,
+                                      email: "",
+                                      zaposleniId: opcija.id,
+                                      rezim: "interni",
+                                    }
+                                  : x,
+                              ),
+                            )
+                          }
+                          onOcisti={() =>
+                            props.setUcesnici((prev) =>
+                              prev.map((x, idx) =>
+                                idx === i
+                                  ? {
+                                      ucesnik: "",
+                                      email: "",
+                                      zaposleniId: null,
+                                      rezim: "interni",
+                                    }
+                                  : x,
+                              ),
+                            )
+                          }
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <Input
+                          className="h-7 border-2 border-gray-500 text-sm text-fon-navy"
+                          placeholder="Ime i prezime"
+                          value={u.ucesnik}
+                          onChange={(e) =>
+                            props.setUcesnici((prev) =>
+                              prev.map((x, idx) =>
+                                idx === i
+                                  ? { ...x, ucesnik: e.target.value }
+                                  : x,
+                              ),
+                            )
+                          }
+                        />
+                        <Input
+                          className="h-7 border-2 border-gray-500 text-sm text-fon-navy"
+                          placeholder="Email (opciono)"
+                          value={u.email}
+                          onChange={(e) =>
+                            props.setUcesnici((prev) =>
+                              prev.map((x, idx) =>
+                                idx === i ? { ...x, email: e.target.value } : x,
+                              ),
+                            )
+                          }
+                        />
+                      </>
+                    )}
+                    {props.ucesnici.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => ukloniUcesnika(i)}
+                      >
+                        <Trash2 size={16} className="text-fon-coral" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
               <Button
@@ -363,7 +486,9 @@ export function SvrhaPolja(props: SvrhaPoljaProps) {
       {tipSvrhe === "DOGADJAJ" && (
         <>
           <div>
-            <label className="mb-1 block text-fon-navy">Naziv događaja</label>
+            <label className="mb-1 block text-fon-navy">
+              Naziv događaja <span className="text-red-500">*</span>
+            </label>
             <Input
               className="border-2 border-gray-500 text-fon-navy"
               value={props.nazivDogadjaja}

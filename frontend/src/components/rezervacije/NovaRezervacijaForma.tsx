@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,9 +20,14 @@ import type {
   PredavacDto,
   SalaDto,
 } from "@/types";
-import { fetchPredavaci } from "@/lib/salaPredavacApi";
+import { fetchPredavaci, fetchSluzbenici } from "@/lib/salaPredavacApi";
+import type { ZaposleniOpcija } from "./PretragaZaposlenog";
 import { kreirajRezervaciju, izvuciPorukuGreske } from "@/lib/rezervacijaApi";
-import { vremeZaBackend } from "@/lib/datumVreme";
+import {
+  danasnjiDatumLokalno,
+  trenutnoVremeLokalno,
+  vremeZaBackend,
+} from "@/lib/datumVreme";
 import { SvrhaPolja, type UcesnikForma } from "./SvrhaPolja";
 import {
   praznaStavka,
@@ -50,6 +55,10 @@ export function NovaRezervacijaForma({
     useState<SvrhaRezervacijeDto["tip"]>("DOGADJAJ");
   const [napomenaRezervacije, setNapomenaRezervacije] = useState("");
 
+  const [datum, setDatum] = useState(danasnjiDatumLokalno());
+  const [vremeOd, setVremeOd] = useState("10:00");
+  const [vremeDo, setVremeDo] = useState("11:00");
+
   const [semestar, setSemestar] = useState(1);
   const [nivoStudija, setNivoStudija] =
     useState<NivoStudija>("OSNOVNE_AKADEMSKE");
@@ -64,19 +73,40 @@ export function NovaRezervacijaForma({
   const [tema, setTema] = useState("");
   const [napomenaSastanka, setNapomenaSastanka] = useState("");
   const [ucesnici, setUcesnici] = useState<UcesnikForma[]>([
-    { ucesnik: "", email: "" },
+    { ucesnik: "", email: "", zaposleniId: null, rezim: "eksterni" },
   ]);
 
   const [nazivDogadjaja, setNazivDogadjaja] = useState("");
   const [opisDogadjaja, setOpisDogadjaja] = useState("");
 
   const [predavaci, setPredavaci] = useState<PredavacDto[]>([]);
+  const [zaposleniOpcije, setZaposleniOpcije] = useState<ZaposleniOpcija[]>([]);
 
   useEffect(() => {
     if (open) {
       fetchPredavaci()
         .then(setPredavaci)
         .catch(() => setPredavaci([]));
+
+      Promise.all([fetchPredavaci(), fetchSluzbenici()])
+        .then(([predavaciData, sluzbeniciData]) => {
+          const opcije: ZaposleniOpcija[] = [
+            ...predavaciData.map((p) => ({
+              id: p.id!,
+              ime: p.ime,
+              prezime: p.prezime,
+              tip: "PREDAVAC" as const,
+            })),
+            ...sluzbeniciData.map((s) => ({
+              id: s.id!,
+              ime: s.ime,
+              prezime: s.prezime,
+              tip: "SLUZBENIK" as const,
+            })),
+          ];
+          setZaposleniOpcije(opcije);
+        })
+        .catch(() => setZaposleniOpcije([]));
     }
   }, [open]);
 
@@ -153,7 +183,11 @@ export function NovaRezervacijaForma({
       case "SASTANAK": {
         const ucesniciDto: UcesnikSastankaDto[] = ucesnici
           .filter((u) => u.ucesnik.trim())
-          .map((u) => ({ ucesnik: u.ucesnik, email: u.email || undefined }));
+          .map((u) => ({
+            ucesnik: u.ucesnik,
+            email: u.email || undefined,
+            zaposleniId: u.zaposleniId ?? undefined,
+          }));
         svrha = {
           tip: "SASTANAK",
           tema,
@@ -174,9 +208,6 @@ export function NovaRezervacijaForma({
     const stavkeDto: StavkaRezervacijeDto[] = stavke.map((s) => {
       const pravaSala = saleFiltrirane.find((sala) => sala.naziv === s.sala)!;
       return {
-        datumTermina: s.datum,
-        vremeOd: vremeZaBackend(s.vremeOd),
-        vremeDo: vremeZaBackend(s.vremeDo),
         brojOsoba: s.brojOsoba,
         opis: s.opis || undefined,
         sala: pravaSala,
@@ -184,6 +215,9 @@ export function NovaRezervacijaForma({
     });
 
     const dto: RezervacijaDto = {
+      datumTermina: datum,
+      vremeOd: vremeZaBackend(vremeOd),
+      vremeDo: vremeZaBackend(vremeDo),
       napomena: napomenaRezervacije || undefined,
       svrha,
       stavke: stavkeDto,
@@ -214,6 +248,7 @@ export function NovaRezervacijaForma({
       <SvrhaPolja
         tipSvrhe={tipSvrhe}
         predavaci={predavaci}
+        zaposleniOpcije={zaposleniOpcije}
         semestar={semestar}
         setSemestar={setSemestar}
         nivoStudija={nivoStudija}
@@ -243,6 +278,54 @@ export function NovaRezervacijaForma({
         opisDogadjaja={opisDogadjaja}
         setOpisDogadjaja={setOpisDogadjaja}
       />
+
+      <div className="border-t border-gray-400 pt-4">
+        <label className="mb-2 flex items-center gap-1.5 text-fon-navy">
+          <Clock size={18} className="text-fon-teal" />
+          Termin rezervacije (zajednički za sve sale ispod)
+        </label>
+        <div>
+          <label className="mb-1 block text-xs text-fon-navy">
+            Datum <span className="text-red-500">*</span>
+          </label>
+          <Input
+            className="border-2 border-gray-500 text-fon-navy"
+            type="date"
+            min={danasnjiDatumLokalno()}
+            value={datum}
+            onChange={(e) => setDatum(e.target.value)}
+          />
+        </div>
+        <div className="mt-2 flex gap-2">
+          <div className="flex-1">
+            <label className="mb-1 block text-xs text-fon-navy">
+              Vreme od <span className="text-red-500">*</span>
+            </label>
+            <Input
+              className="border-2 border-gray-500 text-fon-navy"
+              type="time"
+              min={
+                datum === danasnjiDatumLokalno()
+                  ? trenutnoVremeLokalno()
+                  : undefined
+              }
+              value={vremeOd}
+              onChange={(e) => setVremeOd(e.target.value)}
+            />
+          </div>
+          <div className="flex-1">
+            <label className="mb-1 block text-xs text-fon-navy">
+              Vreme do <span className="text-red-500">*</span>
+            </label>
+            <Input
+              className="border-2 border-gray-500 text-fon-navy"
+              type="time"
+              value={vremeDo}
+              onChange={(e) => setVremeDo(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
 
       <StavkeRezervacije
         stavke={stavke}
@@ -281,7 +364,7 @@ export function NovaRezervacijaForma({
             onClick={() => onOpenChange(false)}
             className="mb-3 text-sm text-fon-blue hover:underline"
           >
-            ← Idi na pregled
+            ← Idi na pregled rezervacija
           </button>
           <div className="overflow-hidden rounded-2xl border-2 border-fon-navy bg-white shadow-lg">
             <div className="fon-gradient px-8 py-5">

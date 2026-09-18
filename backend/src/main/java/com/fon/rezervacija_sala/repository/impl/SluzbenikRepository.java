@@ -60,4 +60,14 @@ public class SluzbenikRepository implements AppRepository<Sluzbenik, Long> {
                 .getSingleResult();
     }
 
+    public Optional<Sluzbenik> findByPoslovniEmail(String email) {
+        List<Sluzbenik> rez = entityManager.createQuery(
+                "SELECT s FROM Sluzbenik s "
+                + "LEFT JOIN FETCH s.sluzba "
+                + "WHERE LOWER(s.poslovniEmail) = LOWER(:email)", Sluzbenik.class)
+                .setParameter("email", email)
+                .getResultList();
+        return rez.isEmpty() ? Optional.empty() : Optional.of(rez.get(0));
+    }
+
 }

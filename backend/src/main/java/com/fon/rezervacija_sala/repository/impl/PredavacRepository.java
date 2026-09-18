@@ -68,6 +68,17 @@ public class PredavacRepository implements AppRepository<Predavac, Long> {
                 .setParameter("zvanjeId", zvanjeId)
                 .getSingleResult();
     }
+
+    public Optional<Predavac> findByPoslovniEmail(String email) {
+        List<Predavac> rez = entityManager.createQuery(
+                "SELECT p FROM Predavac p "
+                + "LEFT JOIN FETCH p.katedra "
+                + "LEFT JOIN FETCH p.zvanje "
+                + "WHERE LOWER(p.poslovniEmail) = LOWER(:email)", Predavac.class)
+                .setParameter("email", email)
+                .getResultList();
+        return rez.isEmpty() ? Optional.empty() : Optional.of(rez.get(0));
+    }
     
     public boolean jeReferenciranKaoMentorIliKomisija(Long predavacId) {
         Long brojKaoMentor = entityManager.createQuery(

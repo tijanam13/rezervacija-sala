@@ -8,7 +8,8 @@ import jakarta.persistence.*;
 public abstract class SvrhaRezervacije {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "svrha_seq")
+    @SequenceGenerator(name = "svrha_seq", sequenceName = "svrha_rezervacije_seq", allocationSize = 1)
     private Long id;
 
     public SvrhaRezervacije() {

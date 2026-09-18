@@ -15,9 +15,9 @@ function rezervacijaUTermine(r: RezervacijaDto): TerminPodaci[] {
     id: s.id ?? Math.random(),
     rezervacijaId: r.id,
     salaNaziv: s.sala.naziv,
-    datum: s.datumTermina,
-    vremeOd: vremeUDecimalni(s.vremeOd),
-    vremeDo: vremeUDecimalni(s.vremeDo),
+    datum: r.datumTermina,
+    vremeOd: vremeUDecimalni(r.vremeOd),
+    vremeDo: vremeUDecimalni(r.vremeDo),
     status: (s.statusStavke ?? "NA_CEKANJU") as TerminPodaci["status"],
     brojOsoba: s.brojOsoba,
     opis: s.opis,
@@ -47,14 +47,14 @@ function zauzetostUTermin(
     vremeOd: vremeUDecimalni(z.vremeOd),
     vremeDo: vremeUDecimalni(z.vremeDo),
     status: z.statusStavke as Aktivan,
-    brojOsoba: 0,
+    brojOsoba: z.brojOsoba,
     korisnikImePrezime: "",
     svrha: { tip: "DOGADJAJ", naziv: "Zauzeto", opis: undefined },
   };
 }
 
 export async function fetchTerminiZaPeriod(
-  od: string,
+  odDatum: string,
   doDatum: string,
   sale: SalaDto[],
 ): Promise<TerminPodaci[]> {
@@ -63,13 +63,13 @@ export async function fetchTerminiZaPeriod(
       params: { stranica: 0, velicina: 200 },
     }),
     api.get<ZauzetostDto[]>("/rezervacija/zauzetost", {
-      params: { od, doDatum },
+      params: { odDatum, doDatum },
     }),
   ]);
 
   const mojiTermini = mojeOdgovor.data.sadrzaj
     .flatMap(rezervacijaUTermine)
-    .filter((t) => t.datum >= od && t.datum <= doDatum);
+    .filter((t) => t.datum >= odDatum && t.datum <= doDatum);
 
   const mojKljuc = (t: TerminPodaci) =>
     `${t.salaNaziv}|${t.datum}|${t.vremeOd}|${t.vremeDo}`;
@@ -85,7 +85,7 @@ export async function fetchTerminiZaPeriod(
 }
 
 export async function fetchTerminiZaPeriodAdministracija(
-  od: string,
+  odDatum: string,
   doDatum: string,
 ): Promise<TerminPodaci[]> {
   const odgovor = await api.get<StranicaDto<RezervacijaDto>>("/rezervacija", {
@@ -94,5 +94,5 @@ export async function fetchTerminiZaPeriodAdministracija(
 
   return odgovor.data.sadrzaj
     .flatMap(rezervacijaUTermine)
-    .filter((t) => t.datum >= od && t.datum <= doDatum);
+    .filter((t) => t.datum >= odDatum && t.datum <= doDatum);
 }

@@ -23,6 +23,7 @@ public class SluzbenikDto {
     @Size(max = 50, message = "Broj radne knjižice može imati najviše 50 karaktera.")
     private String brojRadneKnjizice;
 
+    @NotBlank(message = "Poslovni email je obavezan (koristi se za registraciju naloga).")
     @jakarta.validation.constraints.Email(message = "Email adresa nije ispravnog formata.")
     @Size(max = 150, message = "Email adresa može imati najviše 150 karaktera.")
     private String poslovniEmail;

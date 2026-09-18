@@ -3,8 +3,7 @@ package com.fon.rezervacija_sala.controller;
 import com.fon.rezervacija_sala.dto.AuthResponse;
 import com.fon.rezervacija_sala.dto.KorisnikDto;
 import com.fon.rezervacija_sala.dto.LoginRequest;
-import com.fon.rezervacija_sala.dto.RegisterPredavacRequest;
-import com.fon.rezervacija_sala.dto.RegisterSluzbenikRequest;
+import com.fon.rezervacija_sala.dto.RegisterRequest;
 import com.fon.rezervacija_sala.service.AuthService;
 import com.fon.rezervacija_sala.service.KorisnikService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
@@ -35,16 +34,9 @@ public class AuthController {
     }
 
     @SecurityRequirements
-    @PostMapping("/registracija/predavac")
-    public ResponseEntity<KorisnikDto> registerPredavac(@Valid @RequestBody RegisterPredavacRequest req) {
-        KorisnikDto kreiran = authService.registerPredavac(req);
-        return ResponseEntity.status(201).body(kreiran);
-    }
-
-    @SecurityRequirements
-    @PostMapping("/registracija/sluzbenik")
-    public ResponseEntity<KorisnikDto> registerSluzbenik(@Valid @RequestBody RegisterSluzbenikRequest req) {
-        KorisnikDto kreiran = authService.registerSluzbenik(req);
+    @PostMapping("/registracija")
+    public ResponseEntity<KorisnikDto> registerKorisnik(@Valid @RequestBody RegisterRequest req) {
+        KorisnikDto kreiran = authService.registerKorisnik(req);
         return ResponseEntity.status(201).body(kreiran);
     }
 

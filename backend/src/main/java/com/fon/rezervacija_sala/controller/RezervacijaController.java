@@ -7,9 +7,12 @@ import com.fon.rezervacija_sala.entity.StatusRezervacije;
 import com.fon.rezervacija_sala.entity.StatusStavke;
 import com.fon.rezervacija_sala.service.RezervacijaService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/rezervacija")
+@Validated
 public class RezervacijaController {
 
     private final RezervacijaService rezervacijaService;
@@ -32,8 +36,9 @@ public class RezervacijaController {
     @GetMapping
     public StranicaDto<RezervacijaDto> findAll(
             @RequestParam(required = false) StatusRezervacije status,
-            @RequestParam(defaultValue = "0") int stranica,
-            @RequestParam(defaultValue = "9") int velicina) {
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Stranica ne sme biti negativna.") int stranica,
+            @RequestParam(defaultValue = "9") @Min(value = 1, message = "Veličina stranice mora biti najmanje 1.")
+            @Max(value = 1000, message = "Veličina stranice ne sme biti veća od 1000.") int velicina) {
         return status != null
                 ? rezervacijaService.findByStatus(status, stranica, velicina)
                 : rezervacijaService.findAll(stranica, velicina);
@@ -46,16 +51,20 @@ public class RezervacijaController {
 
     @GetMapping("/moje-rezervacije")
     public StranicaDto<RezervacijaDto> mojeRezervacije(
-            @RequestParam(defaultValue = "0") int stranica,
-            @RequestParam(defaultValue = "9") int velicina) {
-        return rezervacijaService.mojeRezervacije(stranica, velicina);
+            @RequestParam(required = false) StatusRezervacije status,
+            @RequestParam(required = false) LocalDate odDatum,
+            @RequestParam(required = false) LocalDate doDatum,
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Stranica ne sme biti negativna.") int stranica,
+            @RequestParam(defaultValue = "9") @Min(value = 1, message = "Veličina stranice mora biti najmanje 1.")
+            @Max(value = 1000, message = "Veličina stranice ne sme biti veća od 1000.") int velicina) {
+        return rezervacijaService.mojeRezervacije(status, odDatum, doDatum, stranica, velicina);
     }
 
     @GetMapping("/zauzetost")
     public List<ZauzetostDto> zauzetost(
-            @RequestParam LocalDate od,
+            @RequestParam LocalDate odDatum,
             @RequestParam LocalDate doDatum) {
-        return rezervacijaService.pregledZauzetosti(od, doDatum);
+        return rezervacijaService.pregledZauzetosti(odDatum, doDatum);
     }
 
     @PostMapping
@@ -92,6 +101,11 @@ public class RezervacijaController {
     @PatchMapping("/stavka/{stavkaId}/otkazi")
     public RezervacijaDto otkaziStavku(@PathVariable Long stavkaId) {
         return rezervacijaService.otkaziStavku(stavkaId);
+    }
+
+    @PostMapping("/oznaci-istekle")
+    public void oznaciIstekleStavkeRucno() {
+        rezervacijaService.oznaciIstekleStavke();
     }
 
 }

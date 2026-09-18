@@ -1,6 +1,8 @@
 package com.fon.rezervacija_sala.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,13 +13,22 @@ public class Rezervacija {
   
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idRezervacije;
+    private Long id;
 
     @Version
     private Long verzija;
  
     @Column(nullable = false)
     private LocalDateTime datumKreiranja;
+
+    @Column(nullable = false)
+    private LocalDate datumTermina;
+
+    @Column(nullable = false)
+    private LocalTime vremeOd;
+
+    @Column(nullable = false)
+    private LocalTime vremeDo;
  
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -41,13 +52,17 @@ public class Rezervacija {
     }
  
     public Rezervacija(Long idRezervacije) {
-        this.idRezervacije = idRezervacije;
+        this.id = idRezervacije;
     }
  
-    public Rezervacija(Long idRezervacije, LocalDateTime datumKreiranja, StatusRezervacije status,
+    public Rezervacija(Long idRezervacije, LocalDateTime datumKreiranja, LocalDate datumTermina,
+                        LocalTime vremeOd, LocalTime vremeDo, StatusRezervacije status,
                         String napomena, Korisnik korisnik, SvrhaRezervacije svrha) {
-        this.idRezervacije = idRezervacije;
+        this.id = idRezervacije;
         this.datumKreiranja = datumKreiranja;
+        this.datumTermina = datumTermina;
+        this.vremeOd = vremeOd;
+        this.vremeDo = vremeDo;
         this.status = status;
         this.napomena = napomena;
         this.korisnik = korisnik;
@@ -64,12 +79,12 @@ public class Rezervacija {
         this.stavke.remove(item);
     }
  
-    public Long getIdRezervacije() {
-        return idRezervacije;
+    public Long getId() {
+        return id;
     }
  
-    public void setIdRezervacije(Long idRezervacije) {
-        this.idRezervacije = idRezervacije;
+    public void setId(Long idRezervacije) {
+        this.id = idRezervacije;
     }
 
     public Long getVerzija() {
@@ -82,6 +97,30 @@ public class Rezervacija {
  
     public void setDatumKreiranja(LocalDateTime datumKreiranja) {
         this.datumKreiranja = datumKreiranja;
+    }
+
+    public LocalDate getDatumTermina() {
+        return datumTermina;
+    }
+
+    public void setDatumTermina(LocalDate datumTermina) {
+        this.datumTermina = datumTermina;
+    }
+
+    public LocalTime getVremeOd() {
+        return vremeOd;
+    }
+
+    public void setVremeOd(LocalTime vremeOd) {
+        this.vremeOd = vremeOd;
+    }
+
+    public LocalTime getVremeDo() {
+        return vremeDo;
+    }
+
+    public void setVremeDo(LocalTime vremeDo) {
+        this.vremeDo = vremeDo;
     }
  
     public StatusRezervacije getStatus() {

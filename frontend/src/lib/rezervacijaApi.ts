@@ -24,10 +24,13 @@ export async function kreirajRezervaciju(
 export async function fetchMojeRezervacije(
   stranica = 0,
   velicina = 9,
+  status?: StatusRezervacije,
+  odDatum?: string,
+  doDatum?: string,
 ): Promise<StranicaDto<RezervacijaDto>> {
   const { data } = await api.get<StranicaDto<RezervacijaDto>>(
     "/rezervacija/moje-rezervacije",
-    { params: { stranica, velicina } },
+    { params: { stranica, velicina, status, odDatum, doDatum } },
   );
   return data;
 }

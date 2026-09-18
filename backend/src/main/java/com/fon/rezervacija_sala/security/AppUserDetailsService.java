@@ -1,7 +1,6 @@
 package com.fon.rezervacija_sala.security;
 
 import com.fon.rezervacija_sala.entity.Korisnik;
-import com.fon.rezervacija_sala.entity.StatusNaloga;
 import com.fon.rezervacija_sala.repository.impl.KorisnikRepository;
 import java.util.List;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -25,8 +24,6 @@ public class AppUserDetailsService implements UserDetailsService {
         Korisnik k = korisnici.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "Korisnik sa email adresom " + email + " nije pronađen."));
-        
-        boolean enabled = k.getStatus() != StatusNaloga.NEAKTIVAN;
 
         List<SimpleGrantedAuthority> authorities = k.getUloge().stream()
                 .map(u -> new SimpleGrantedAuthority("ROLE_" + u.getNaziv().name()))
@@ -35,7 +32,7 @@ public class AppUserDetailsService implements UserDetailsService {
         return new User(
                 k.getEmail(),
                 k.getLozinkaHash(),
-                enabled,
+                true,
                 true,
                 true,
                 true,

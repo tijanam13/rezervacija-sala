@@ -39,9 +39,14 @@ export function jeAdministracija(): boolean {
   return jeKoordinator() || jeAdmin();
 }
 
-export function odjaviSe(razlog?: "istekla-sesija") {
+export function odjaviSe(razlog?: "istekla-sesija" | "uloga-promenjena") {
   localStorage.removeItem(KLJUC_TOKEN);
   localStorage.removeItem(KLJUC_KORISNIK);
-  window.location.href =
-    razlog === "istekla-sesija" ? "/prijava?istekla=1" : "/prijava";
+  const upit =
+    razlog === "istekla-sesija"
+      ? "?istekla=1"
+      : razlog === "uloga-promenjena"
+        ? "?uloga=1"
+        : "";
+  window.location.href = `/prijava${upit}`;
 }

@@ -52,7 +52,13 @@ public class SecurityConfig {
                     res.setContentType("application/json;charset=UTF-8");
                     res.getWriter().write(
                             "{\"poruka\":\"Nemate dozvolu za ovu radnju.\"}");
-                }))
+                }) 
+                .authenticationEntryPoint((req, res, ex) -> {
+                    res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    res.setContentType("application/json;charset=UTF-8");
+                    res.getWriter().write("{\"poruka\":\"Niste prijavljeni.\"}");
+                })  
+                )
                 .headers(headers -> headers
                 .frameOptions(frame -> frame.deny())
                 .contentTypeOptions(contentType -> {
@@ -66,7 +72,7 @@ public class SecurityConfig {
 
                 .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasAuthority("ROLE_ADMIN")
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
   
                 .requestMatchers(HttpMethod.GET, "/api/katedra/**", "/api/zvanje/**", "/api/sluzba/**").permitAll()
 
@@ -78,6 +84,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PATCH, "/api/rezervacija/*/odbij-sa-razlogom").hasAnyAuthority("ROLE_KOORDINATOR", "ROLE_ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/api/rezervacija/stavka/*/status").hasAnyAuthority("ROLE_KOORDINATOR", "ROLE_ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/api/rezervacija/stavka/*/odbij-sa-razlogom").hasAnyAuthority("ROLE_KOORDINATOR", "ROLE_ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/rezervacija/oznaci-istekle").hasAuthority("ROLE_ADMIN")
 
                 .requestMatchers(HttpMethod.POST, "/api/sala/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/sala/**").hasAuthority("ROLE_ADMIN")

@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
-import { Pencil, Trash2, Mail, Phone, IdCard, Plus } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Mail,
+  Phone,
+  IdCard,
+  Plus,
+  Search,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -58,6 +66,17 @@ export function SluzbeniciTab({
 }: SluzbeniciTabProps) {
   const sluzbeItems = useMemo(() => selectItemsOd(sluzbe), [sluzbe]);
 
+  const [pretraga, setPretraga] = useState("");
+  const sluzbeniciFiltrirani = useMemo(() => {
+    const p = pretraga.toLowerCase();
+    return sluzbenici.filter(
+      (s) =>
+        s.ime.toLowerCase().includes(p) ||
+        s.prezime.toLowerCase().includes(p) ||
+        (s.poslovniEmail ?? "").toLowerCase().includes(p),
+    );
+  }, [sluzbenici, pretraga]);
+
   const [dijalogOtvoren, setDijalogOtvoren] = useState(false);
   const [kojiSeUredjuje, setKojiSeUredjuje] = useState<SluzbenikDto | null>(
     null,
@@ -89,8 +108,15 @@ export function SluzbeniciTab({
   }
 
   async function sacuvaj() {
-    if (!forma.ime.trim() || !forma.prezime.trim() || !forma.sluzbaId) {
-      setFormaGreska("Ime, prezime i služba su obavezni podaci.");
+    if (
+      !forma.ime.trim() ||
+      !forma.prezime.trim() ||
+      !forma.poslovniEmail.trim() ||
+      !forma.sluzbaId
+    ) {
+      setFormaGreska(
+        "Ime, prezime, poslovni email i služba su obavezni podaci.",
+      );
       return;
     }
 
@@ -158,7 +184,19 @@ export function SluzbeniciTab({
 
   return (
     <>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="relative max-w-xs flex-1">
+          <Search
+            size={16}
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"
+          />
+          <Input
+            placeholder="Pretraži službenika po imenu ili emailu..."
+            value={pretraga}
+            onChange={(e) => setPretraga(e.target.value)}
+            className="pl-9"
+          />
+        </div>
         <Button
           onClick={otvoriDodavanje}
           className="gap-1.5 bg-fon-teal text-fon-dark hover:bg-fon-teal/90"
@@ -168,9 +206,11 @@ export function SluzbeniciTab({
         </Button>
       </div>
 
-      {sluzbenici.length === 0 ? (
+      {sluzbeniciFiltrirani.length === 0 ? (
         <p className="py-10 text-center text-sm text-gray-500">
-          Nema službenika za prikaz.
+          {sluzbenici.length === 0
+            ? "Nema službenika za prikaz."
+            : "Nema službenika koji odgovaraju pretrazi."}
         </p>
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-100 bg-white">
@@ -185,7 +225,7 @@ export function SluzbeniciTab({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {sluzbenici.map((s) => (
+              {sluzbeniciFiltrirani.map((s) => (
                 <tr key={s.id}>
                   <td className="px-4 py-3 font-medium text-fon-dark">
                     {s.ime} {s.prezime}
@@ -265,22 +305,32 @@ export function SluzbeniciTab({
 
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-2 gap-2">
-              <Input
-                placeholder="Ime"
-                value={forma.ime}
-                onChange={(e) =>
-                  setForma((f) => ({ ...f, ime: e.target.value }))
-                }
-                className="border-gray-200 bg-gray-50"
-              />
-              <Input
-                placeholder="Prezime"
-                value={forma.prezime}
-                onChange={(e) =>
-                  setForma((f) => ({ ...f, prezime: e.target.value }))
-                }
-                className="border-gray-200 bg-gray-50"
-              />
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">
+                  Ime <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  placeholder="Ime"
+                  value={forma.ime}
+                  onChange={(e) =>
+                    setForma((f) => ({ ...f, ime: e.target.value }))
+                  }
+                  className="border-gray-200 bg-gray-50"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">
+                  Prezime <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  placeholder="Prezime"
+                  value={forma.prezime}
+                  onChange={(e) =>
+                    setForma((f) => ({ ...f, prezime: e.target.value }))
+                  }
+                  className="border-gray-200 bg-gray-50"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Input
@@ -300,15 +350,20 @@ export function SluzbeniciTab({
                 className="border-gray-200 bg-gray-50"
               />
             </div>
-            <Input
-              type="email"
-              placeholder="Poslovni email"
-              value={forma.poslovniEmail}
-              onChange={(e) =>
-                setForma((f) => ({ ...f, poslovniEmail: e.target.value }))
-              }
-              className="border-gray-200 bg-gray-50"
-            />
+            <div>
+              <label className="mb-1 block text-sm text-gray-600">
+                Poslovni email <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="email"
+                placeholder="Poslovni email"
+                value={forma.poslovniEmail}
+                onChange={(e) =>
+                  setForma((f) => ({ ...f, poslovniEmail: e.target.value }))
+                }
+                className="border-gray-200 bg-gray-50"
+              />
+            </div>
             <Input
               placeholder="Pozicija"
               value={forma.pozicija}
@@ -317,24 +372,29 @@ export function SluzbeniciTab({
               }
               className="border-gray-200 bg-gray-50"
             />
-            <Select
-              items={sluzbeItems}
-              value={forma.sluzbaId}
-              onValueChange={(v) =>
-                v !== null && setForma((f) => ({ ...f, sluzbaId: v }))
-              }
-            >
-              <SelectTrigger className="w-full border-gray-200 bg-gray-50">
-                <SelectValue placeholder="Izaberi službu" />
-              </SelectTrigger>
-              <SelectContent {...SELECT_PROPS}>
-                {sluzbe.map((s) => (
-                  <SelectItem key={s.id} value={String(s.id)}>
-                    {s.naziv}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div>
+              <label className="mb-1 block text-sm text-gray-600">
+                Služba <span className="text-red-500">*</span>
+              </label>
+              <Select
+                items={sluzbeItems}
+                value={forma.sluzbaId}
+                onValueChange={(v) =>
+                  v !== null && setForma((f) => ({ ...f, sluzbaId: v }))
+                }
+              >
+                <SelectTrigger className="w-full border-gray-200 bg-gray-50">
+                  <SelectValue placeholder="Izaberi službu" />
+                </SelectTrigger>
+                <SelectContent {...SELECT_PROPS}>
+                  {sluzbe.map((s) => (
+                    <SelectItem key={s.id} value={String(s.id)}>
+                      {s.naziv}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             {formaGreska && (
               <div className="flex items-start gap-2 rounded-lg border border-fon-coral/30 bg-fon-coral/10 p-2.5 text-sm text-fon-coral">

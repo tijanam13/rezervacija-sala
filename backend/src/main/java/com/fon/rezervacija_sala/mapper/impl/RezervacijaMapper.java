@@ -27,8 +27,11 @@ public class RezervacijaMapper implements DtoEntityMapper<RezervacijaDto, Rezerv
         }
 
         RezervacijaDto dto = new RezervacijaDto();
-        dto.setId(e.getIdRezervacije());
+        dto.setId(e.getId());
         dto.setDatumKreiranja(e.getDatumKreiranja());
+        dto.setDatumTermina(e.getDatumTermina());
+        dto.setVremeOd(e.getVremeOd());
+        dto.setVremeDo(e.getVremeDo());
         dto.setStatus(e.getStatus());
         dto.setNapomena(e.getNapomena());
         dto.setKorisnik(korisnikMapper.toDto(e.getKorisnik()));
@@ -50,8 +53,11 @@ public class RezervacijaMapper implements DtoEntityMapper<RezervacijaDto, Rezerv
         }
 
         Rezervacija r = new Rezervacija();
-        r.setIdRezervacije(t.getId());
+        r.setId(t.getId());
         r.setDatumKreiranja(t.getDatumKreiranja());
+        r.setDatumTermina(t.getDatumTermina());
+        r.setVremeOd(t.getVremeOd());
+        r.setVremeDo(t.getVremeDo());
         r.setStatus(t.getStatus());
         r.setNapomena(t.getNapomena());
         r.setSvrha(svrhaMapper.toEntity(t.getSvrha()));

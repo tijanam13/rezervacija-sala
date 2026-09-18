@@ -32,6 +32,13 @@ public class SalaRepository implements AppRepository<Sala, Long> {
         return rez.isEmpty() ? Optional.empty() : Optional.of(rez.get(0));
     }
 
+    public long brojSalaZaTip(Long tipSaleId) {
+        return entityManager.createQuery(
+                "SELECT COUNT(s) FROM Sala s WHERE s.tipSale.id = :tipSaleId", Long.class)
+                .setParameter("tipSaleId", tipSaleId)
+                .getSingleResult();
+    }
+
     @Override
     @Transactional
     public void save(Sala entity) {

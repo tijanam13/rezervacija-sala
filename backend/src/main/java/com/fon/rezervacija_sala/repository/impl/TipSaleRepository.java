@@ -44,4 +44,12 @@ public class TipSaleRepository implements AppRepository<TipSale, Long> {
         }
     }
 
+    public Optional<TipSale> findByNaziv(String naziv) {
+        List<TipSale> rez = entityManager.createQuery(
+                "SELECT t FROM TipSale t WHERE t.naziv = :naziv", TipSale.class)
+                .setParameter("naziv", naziv)
+                .getResultList();
+        return rez.isEmpty() ? Optional.empty() : Optional.of(rez.get(0));
+    }
+
 }

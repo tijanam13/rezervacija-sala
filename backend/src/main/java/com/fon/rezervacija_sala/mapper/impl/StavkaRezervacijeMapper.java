@@ -23,13 +23,10 @@ public class StavkaRezervacijeMapper implements DtoEntityMapper<StavkaRezervacij
         }
         return new StavkaRezervacijeDto(
                 e.getId(),
-                e.getDatumTermina(),
-                e.getVremeOd(),
-                e.getVremeDo(),
                 e.getBrojOsoba(),
                 e.getStatusStavke(),
                 e.getOpis(),
-                e.getRezervacija() != null ? e.getRezervacija().getIdRezervacije() : null,
+                e.getRezervacija() != null ? e.getRezervacija().getId() : null,
                 salaMapper.toDto(e.getSala())
         );
     }
@@ -49,9 +46,6 @@ public class StavkaRezervacijeMapper implements DtoEntityMapper<StavkaRezervacij
 
         return new StavkaRezervacije(
                 t.getId(),
-                t.getDatumTermina(),
-                t.getVremeOd(),
-                t.getVremeDo(),
                 t.getBrojOsoba(),
                 t.getStatusStavke(),
                 t.getOpis(),

@@ -7,6 +7,7 @@ import {
   Building2,
   Users,
   Monitor,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +69,16 @@ export function SaleTab({
   onGreska,
 }: SaleTabProps) {
   const tipoviItems = useMemo(() => selectItemsOd(tipovi), [tipovi]);
+  const [pretraga, setPretraga] = useState("");
+  const saleFiltrirane = useMemo(
+    () =>
+      sale.filter(
+        (s) =>
+          s.naziv.toLowerCase().includes(pretraga.toLowerCase()) ||
+          s.zgrada.toLowerCase().includes(pretraga.toLowerCase()),
+      ),
+    [sale, pretraga],
+  );
 
   const [dijalogOtvoren, setDijalogOtvoren] = useState(false);
   const [kojaSeUredjuje, setKojaSeUredjuje] = useState<SalaDto | null>(null);
@@ -147,6 +158,7 @@ export function SaleTab({
   }
 
   const [statusUToku, setStatusUToku] = useState<number | null>(null);
+  const [statusGreska, setStatusGreska] = useState<string | null>(null);
   async function promeniStatus(s: SalaDto, noviStatus: StatusSale) {
     if (s.status === noviStatus) return;
     setStatusUToku(s.id);
@@ -156,7 +168,7 @@ export function SaleTab({
         prev.map((x) => (x.id === azurirana.id ? azurirana : x)),
       );
     } catch (err) {
-      onGreska(izvuciPorukuGreske(err));
+      setStatusGreska(izvuciPorukuGreske(err));
     } finally {
       setStatusUToku(null);
     }
@@ -184,7 +196,19 @@ export function SaleTab({
 
   return (
     <>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="relative max-w-xs flex-1">
+          <Search
+            size={16}
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"
+          />
+          <Input
+            placeholder="Pretraži salu po nazivu ili zgradi..."
+            value={pretraga}
+            onChange={(e) => setPretraga(e.target.value)}
+            className="pl-9"
+          />
+        </div>
         <Button
           onClick={otvoriDodavanje}
           disabled={tipovi.length === 0}
@@ -198,9 +222,11 @@ export function SaleTab({
         </Button>
       </div>
 
-      {sale.length === 0 ? (
+      {saleFiltrirane.length === 0 ? (
         <p className="py-10 text-center text-sm text-gray-500">
-          Nema sala za prikaz.
+          {sale.length === 0
+            ? "Nema sala za prikaz."
+            : "Nema sala koje odgovaraju pretrazi."}
         </p>
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-100 bg-white">
@@ -217,7 +243,7 @@ export function SaleTab({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {sale.map((s) => {
+              {saleFiltrirane.map((s) => {
                 const stil = getStatusSaleStyle(s.status);
                 const uAkciji = statusUToku === s.id;
                 return (
@@ -321,73 +347,103 @@ export function SaleTab({
           </DialogHeader>
 
           <div className="flex flex-col gap-3">
-            <Input
-              placeholder="Naziv sale (npr. 301)"
-              value={forma.naziv}
-              onChange={(e) =>
-                setForma((f) => ({ ...f, naziv: e.target.value }))
-              }
-              className="border-gray-200 bg-gray-50"
-            />
-            <Input
-              placeholder="Zgrada"
-              value={forma.zgrada}
-              onChange={(e) =>
-                setForma((f) => ({ ...f, zgrada: e.target.value }))
-              }
-              className="border-gray-200 bg-gray-50"
-            />
-            <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="mb-1 block text-sm text-gray-600">
+                Naziv sale <span className="text-red-500">*</span>
+              </label>
               <Input
-                type="number"
-                placeholder="Sprat"
-                value={forma.sprat}
+                placeholder="Naziv sale (npr. 301)"
+                value={forma.naziv}
                 onChange={(e) =>
-                  setForma((f) => ({ ...f, sprat: e.target.value }))
-                }
-                className="border-gray-200 bg-gray-50"
-              />
-              <Input
-                type="number"
-                placeholder="Kapacitet"
-                value={forma.kapacitet}
-                onChange={(e) =>
-                  setForma((f) => ({ ...f, kapacitet: e.target.value }))
-                }
-                className="border-gray-200 bg-gray-50"
-              />
-              <Input
-                type="number"
-                placeholder="Računari"
-                value={forma.brojRacunara}
-                onChange={(e) =>
-                  setForma((f) => ({ ...f, brojRacunara: e.target.value }))
+                  setForma((f) => ({ ...f, naziv: e.target.value }))
                 }
                 className="border-gray-200 bg-gray-50"
               />
             </div>
-            <Select
-              items={tipoviItems}
-              value={forma.tipSaleId}
-              onValueChange={(v) =>
-                v !== null && setForma((f) => ({ ...f, tipSaleId: v }))
-              }
-            >
-              <SelectTrigger className="w-full border-gray-200 bg-gray-50">
-                <SelectValue placeholder="Izaberi tip sale" />
-              </SelectTrigger>
-              <SelectContent {...SELECT_PROPS}>
-                {tipovi.map((t) => (
-                  <SelectItem
-                    key={t.id}
-                    value={String(t.id)}
-                    className="cursor-pointer focus:bg-fon-blue/10 focus:text-fon-dark"
-                  >
-                    {t.naziv}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div>
+              <label className="mb-1 block text-sm text-gray-600">
+                Zgrada <span className="text-red-500">*</span>
+              </label>
+              <Input
+                placeholder="Zgrada"
+                value={forma.zgrada}
+                onChange={(e) =>
+                  setForma((f) => ({ ...f, zgrada: e.target.value }))
+                }
+                className="border-gray-200 bg-gray-50"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">
+                  Sprat <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="number"
+                  placeholder="Sprat"
+                  value={forma.sprat}
+                  onChange={(e) =>
+                    setForma((f) => ({ ...f, sprat: e.target.value }))
+                  }
+                  className="border-gray-200 bg-gray-50"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">
+                  Kapacitet <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="number"
+                  placeholder="Kapacitet"
+                  value={forma.kapacitet}
+                  onChange={(e) =>
+                    setForma((f) => ({ ...f, kapacitet: e.target.value }))
+                  }
+                  className="border-gray-200 bg-gray-50"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">
+                  Računari <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="number"
+                  placeholder="Računari"
+                  value={forma.brojRacunara}
+                  onChange={(e) =>
+                    setForma((f) => ({ ...f, brojRacunara: e.target.value }))
+                  }
+                  className="border-gray-200 bg-gray-50"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm text-gray-600">
+                Tip sale <span className="text-red-500">*</span>
+              </label>
+              <Select
+                items={tipoviItems}
+                value={forma.tipSaleId}
+                onValueChange={(v) =>
+                  v !== null && setForma((f) => ({ ...f, tipSaleId: v }))
+                }
+              >
+                <SelectTrigger className="w-full border-gray-200 bg-gray-50">
+                  <SelectValue placeholder="Izaberi tip sale" />
+                </SelectTrigger>
+                <SelectContent {...SELECT_PROPS}>
+                  {tipovi.map((t) => (
+                    <SelectItem
+                      key={t.id}
+                      value={String(t.id)}
+                      className="cursor-pointer focus:bg-fon-blue/10 focus:text-fon-dark"
+                    >
+                      {t.naziv}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             {formaGreska && (
               <div className="flex items-start gap-2 rounded-lg border border-fon-coral/30 bg-fon-coral/10 p-2.5 text-sm text-fon-coral">
@@ -425,6 +481,29 @@ export function SaleTab({
         onOtkazi={() => setZaBrisanje(null)}
         onPotvrdi={potvrdiBrisanje}
       />
+
+      <Dialog
+        open={statusGreska !== null}
+        onOpenChange={(otvoren) => !otvoren && setStatusGreska(null)}
+      >
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-fon-coral">
+              <AlertCircle size={20} />
+              Promena statusa nije uspela
+            </DialogTitle>
+            <DialogDescription>{statusGreska}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              onClick={() => setStatusGreska(null)}
+              className="bg-fon-blue text-white hover:bg-fon-blue/90"
+            >
+              U redu
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

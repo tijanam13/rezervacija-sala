@@ -1,10 +1,25 @@
 import { useState, useEffect, useCallback } from "react";
-import { AlertCircle, Ban, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  AlertCircle,
+  Ban,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  CalendarDays,
+} from "lucide-react";
 import { NavBar } from "@/components/layout/NavBar";
 import { DetaljiSvrhe } from "@/components/rezervacije/DetaljiSvrhe";
 import { RezervacijaKartica } from "@/components/rezervacije/RezervacijaKartica";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Red } from "@/components/common/Red";
 import {
   Dialog,
@@ -20,9 +35,20 @@ import {
 } from "@/lib/rezervacijaApi";
 import { getStatusStyle } from "@/lib/statusColors";
 import { nazivSvrhe, formatVreme, formatDatum } from "@/lib/svrhaHelpers";
-import type { RezervacijaDto } from "@/types";
+import type { RezervacijaDto, StatusRezervacije } from "@/types";
 
 const VELICINA_STRANICE = 9;
+
+const OPCIJE_STATUSA: { vrednost: StatusRezervacije | "SVE"; naziv: string }[] =
+  [
+    { vrednost: "SVE", naziv: "Svi statusi" },
+    { vrednost: "NA_CEKANJU", naziv: "Na čekanju" },
+    { vrednost: "ODOBRENA", naziv: "Odobrena" },
+    { vrednost: "DELIMICNO_ODOBRENA", naziv: "Delimično odobrena" },
+    { vrednost: "ODBIJENA", naziv: "Odbijena" },
+    { vrednost: "OTKAZANA", naziv: "Otkazana" },
+    { vrednost: "ISTEKLA", naziv: "Istekla" },
+  ];
 
 function vremeUDecimalni(vremeString: string): number {
   const [satiStr, minutiStr] = vremeString.split(":");
@@ -36,6 +62,12 @@ export default function MojeRezervacije() {
   const [ucitava, setUcitava] = useState(true);
   const [greska, setGreska] = useState<string | null>(null);
 
+  const [filterStatus, setFilterStatus] = useState<StatusRezervacije | "SVE">(
+    "SVE",
+  );
+  const [filterOd, setFilterOd] = useState("");
+  const [filterDo, setFilterDo] = useState("");
+
   const [izabrana, setIzabrana] = useState<RezervacijaDto | null>(null);
 
   const [potvrdaZaOtkaz, setPotvrdaZaOtkaz] = useState<
@@ -43,26 +75,36 @@ export default function MojeRezervacije() {
   >(null);
   const [otkazivanjeUToku, setOtkazivanjeUToku] = useState(false);
 
-  const ucitajStranicu = useCallback(async (brojStranice: number) => {
-    setUcitava(true);
-    setGreska(null);
-    try {
-      const odgovor = await fetchMojeRezervacije(
-        brojStranice,
-        VELICINA_STRANICE,
-      );
-      setRezervacije(odgovor.sadrzaj);
-      setUkupnoStranica(odgovor.ukupnoStranica);
-    } catch (err) {
-      setGreska(izvuciPorukuGreske(err));
-    } finally {
-      setUcitava(false);
-    }
-  }, []);
+  const ucitajStranicu = useCallback(
+    async (brojStranice: number) => {
+      setUcitava(true);
+      setGreska(null);
+      try {
+        const odgovor = await fetchMojeRezervacije(
+          brojStranice,
+          VELICINA_STRANICE,
+          filterStatus === "SVE" ? undefined : filterStatus,
+          filterOd || undefined,
+          filterDo || undefined,
+        );
+        setRezervacije(odgovor.sadrzaj);
+        setUkupnoStranica(odgovor.ukupnoStranica);
+      } catch (err) {
+        setGreska(izvuciPorukuGreske(err));
+      } finally {
+        setUcitava(false);
+      }
+    },
+    [filterStatus, filterOd, filterDo],
+  );
 
   useEffect(() => {
     ucitajStranicu(stranica);
   }, [stranica, ucitajStranicu]);
+
+  useEffect(() => {
+    setStranica(0);
+  }, [filterStatus, filterOd, filterDo]);
 
   async function potvrdiOtkazivanje() {
     if (!potvrdaZaOtkaz) return;
@@ -105,6 +147,77 @@ export default function MojeRezervacije() {
           </p>
         </div>
 
+        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-fon-teal/20 bg-fon-teal/5 p-3">
+          <Select
+            value={filterStatus}
+            onValueChange={(v) => {
+              if (v) setFilterStatus(v as StatusRezervacije | "SVE");
+            }}
+          >
+            <SelectTrigger
+              title={
+                filterStatus === "SVE"
+                  ? "Svi statusi"
+                  : OPCIJE_STATUSA.find((o) => o.vrednost === filterStatus)
+                      ?.naziv
+              }
+              className="min-w-[170px] flex-1 shrink-0 border-fon-navy/30 bg-white text-left [&>span]:truncate"
+            >
+              <Filter size={14} className="shrink-0 text-fon-navy" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent side="bottom" align="start">
+              {OPCIJE_STATUSA.map((opcija) => (
+                <SelectItem key={opcija.vrednost} value={opcija.vrednost}>
+                  {opcija.naziv}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="relative min-w-[160px] flex-1">
+            <CalendarDays
+              size={14}
+              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-fon-purple"
+            />
+            <Input
+              type="date"
+              title={filterOd ? `Termin od: ${filterOd}` : "Termin od"}
+              className="border-fon-purple/30 bg-white pl-9"
+              value={filterOd}
+              onChange={(e) => setFilterOd(e.target.value)}
+            />
+          </div>
+
+          <div className="relative min-w-[160px] flex-1">
+            <CalendarDays
+              size={14}
+              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-fon-pink"
+            />
+            <Input
+              type="date"
+              title={filterDo ? `Termin do: ${filterDo}` : "Termin do"}
+              className="border-fon-pink/30 bg-white pl-9"
+              value={filterDo}
+              onChange={(e) => setFilterDo(e.target.value)}
+            />
+          </div>
+
+          {(filterStatus !== "SVE" || filterOd || filterDo) && (
+            <Button
+              variant="outline"
+              className="shrink-0 border-fon-teal/30 bg-white"
+              onClick={() => {
+                setFilterStatus("SVE");
+                setFilterOd("");
+                setFilterDo("");
+              }}
+            >
+              Poništi filtere
+            </Button>
+          )}
+        </div>
+
         {greska && (
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-fon-coral/30 bg-fon-coral/10 p-3 text-sm text-fon-coral">
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
@@ -118,7 +231,9 @@ export default function MojeRezervacije() {
           </p>
         ) : rezervacije.length === 0 ? (
           <p className="py-10 text-center text-sm text-gray-500">
-            Nemaš još nijednu rezervaciju.
+            {filterStatus !== "SVE" || filterOd || filterDo
+              ? "Nema rezervacija koje odgovaraju izabranim filterima."
+              : "Nemaš još nijednu rezervaciju."}
           </p>
         ) : (
           <div className="space-y-3">
@@ -191,6 +306,14 @@ export default function MojeRezervacije() {
                       )}
                     />
                   )}
+                  <Red
+                    naziv="Datum termina"
+                    vrednost={formatDatum(izabrana.datumTermina)}
+                  />
+                  <Red
+                    naziv="Vreme"
+                    vrednost={`${formatVreme(vremeUDecimalni(izabrana.vremeOd))} - ${formatVreme(vremeUDecimalni(izabrana.vremeDo))}`}
+                  />
                   {izabrana.napomena && (
                     <Red
                       naziv="Napomena (cela rezervacija)"
@@ -270,14 +393,6 @@ export default function MojeRezervacije() {
                               vrednost={String(s.sala.brojRacunara)}
                             />
                           )}
-                          <Red
-                            naziv="Datum"
-                            vrednost={formatDatum(s.datumTermina)}
-                          />
-                          <Red
-                            naziv="Vreme"
-                            vrednost={`${formatVreme(vremeUDecimalni(s.vremeOd))} - ${formatVreme(vremeUDecimalni(s.vremeDo))}`}
-                          />
                           <Red
                             naziv="Broj osoba"
                             vrednost={String(s.brojOsoba)}

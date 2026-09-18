@@ -1,5 +1,7 @@
 package com.fon.rezervacija_sala.exception;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +30,17 @@ public class GlobalExceptionHandler {
             greskePoPolju.put(fe.getField(), fe.getDefaultMessage());
         }
         return odgovor(HttpStatus.BAD_REQUEST, "Neispravni podaci u zahtevu.", greskePoPolju);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException ex) {
+        Map<String, String> greskePoPolju = new HashMap<>();
+        for (ConstraintViolation<?> cv : ex.getConstraintViolations()) {
+            String putanja = cv.getPropertyPath().toString();
+            String naziv = putanja.contains(".") ? putanja.substring(putanja.lastIndexOf('.') + 1) : putanja;
+            greskePoPolju.put(naziv, cv.getMessage());
+        }
+        return odgovor(HttpStatus.BAD_REQUEST, "Neispravni parametri zahteva.", greskePoPolju);
     }
 
     @ExceptionHandler(PoslovnaGreskaException.class)
@@ -81,8 +94,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleNarusenoOgranicenje(DataIntegrityViolationException ex) {
         log.warn("Narušeno ograničenje baze podataka (npr. dupla vrednost): {}", ex.getMessage());
         return odgovor(HttpStatus.CONFLICT,
-                "Podatak koji pokušavate da sačuvate se sukobljava sa postojećim (npr. već je u upotrebi). "
-                + "Pokušajte ponovo.", null);
+                "Došlo je do konflikta prilikom čuvanja podataka (npr. neki unos je već iskorišćen ili "
+                + "povezani podatak ne postoji). Osvežite stranicu i pokušajte ponovo.", null);
     }
 
     @ExceptionHandler(Exception.class)

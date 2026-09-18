@@ -44,4 +44,12 @@ public class KatedraRepository implements AppRepository<Katedra, Long> {
         }
     }
 
+    public Optional<Katedra> findByNaziv(String naziv) {
+        List<Katedra> rez = entityManager.createQuery(
+                "SELECT k FROM Katedra k WHERE k.naziv = :naziv", Katedra.class)
+                .setParameter("naziv", naziv)
+                .getResultList();
+        return rez.isEmpty() ? Optional.empty() : Optional.of(rez.get(0));
+    }
+
 }

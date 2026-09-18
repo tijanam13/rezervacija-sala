@@ -48,6 +48,7 @@ public class PredavacService {
     public PredavacDto create(PredavacDto dto) {
         Katedra katedra = pronadjiKatedruIliBaciGresku(dto.getKatedra());
         Zvanje zvanje = pronadjiZvanjeIliBaciGresku(dto.getZvanje());
+        proveriDaPoslovniEmailNijeZauzet(dto.getPoslovniEmail(), null);
 
         Predavac p = new Predavac();
         p.setIme(dto.getIme());
@@ -70,6 +71,7 @@ public class PredavacService {
         Predavac postojeci = pronadjiIliBaciGresku(id);
         Katedra katedra = pronadjiKatedruIliBaciGresku(dto.getKatedra());
         Zvanje zvanje = pronadjiZvanjeIliBaciGresku(dto.getZvanje());
+        proveriDaPoslovniEmailNijeZauzet(dto.getPoslovniEmail(), id);
 
         postojeci.setIme(dto.getIme());
         postojeci.setPrezime(dto.getPrezime());
@@ -92,13 +94,13 @@ public class PredavacService {
 
         if (korisnici.findByZaposleniId(id).isPresent()) {
             throw new BrisanjeNijeMoguceException(
-                    "Predavač (id: " + id + ") ima povezan korisnički nalog za prijavu. "
+                    "Predavač ima povezan korisnički nalog za prijavu. "
                     + "Nalog se ne može obrisati, pa se ni ovaj profil ne može obrisati. "
                     + "Nalog se može samo blokirati.");
         }
         if (predavci.jeReferenciranKaoMentorIliKomisija(id)) {
             throw new BrisanjeNijeMoguceException(
-                    "Predavač (id: " + id + ") je naveden kao mentor ili član komisije "
+                    "Predavač je naveden kao mentor ili član komisije "
                     + "na bar jednom završnom radu, pa ne može biti obrisan.");
         }
 
@@ -108,7 +110,16 @@ public class PredavacService {
 
     private Predavac pronadjiIliBaciGresku(Long id) {
         return predavci.findById(id)
-                .orElseThrow(() -> new ResursNijePronadjenException("Predavač sa id " + id + " ne postoji."));
+                .orElseThrow(() -> new ResursNijePronadjenException("Predavač ne postoji."));
+    }
+
+    private void proveriDaPoslovniEmailNijeZauzet(String poslovniEmail, Long idPredavacaKojiSeMenja) {
+        predavci.findByPoslovniEmail(poslovniEmail)
+                .filter(postojeci -> !postojeci.getId().equals(idPredavacaKojiSeMenja))
+                .ifPresent(postojeci -> {
+                    throw new NevalidanZahtevException(
+                            "Poslovni email \"" + poslovniEmail + "\" je već dodeljen drugom predavaču.");
+                });
     }
 
     private Katedra pronadjiKatedruIliBaciGresku(KatedraDto katedraDto) {
@@ -116,8 +127,7 @@ public class PredavacService {
             throw new NevalidanZahtevException("Katedra mora biti prosleđena.");
         }
         return katedre.findById(katedraDto.getId())
-                .orElseThrow(() -> new ResursNijePronadjenException(
-                        "Katedra sa id " + katedraDto.getId() + " ne postoji."));
+                .orElseThrow(() -> new ResursNijePronadjenException("Katedra ne postoji."));
     }
 
     private Zvanje pronadjiZvanjeIliBaciGresku(ZvanjeDto zvanjeDto) {
@@ -125,8 +135,7 @@ public class PredavacService {
             throw new NevalidanZahtevException("Zvanje mora biti prosleđeno.");
         }
         return zvanja.findById(zvanjeDto.getId())
-                .orElseThrow(() -> new ResursNijePronadjenException(
-                        "Zvanje sa id " + zvanjeDto.getId() + " ne postoji."));
+                .orElseThrow(() -> new ResursNijePronadjenException("Zvanje ne postoji."));
     }
 
 }

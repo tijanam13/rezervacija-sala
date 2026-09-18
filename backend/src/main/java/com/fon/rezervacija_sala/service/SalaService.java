@@ -93,7 +93,7 @@ public class SalaService {
             throw new BrisanjeNijeMoguceException(
                     "Sala \"" + s.getNaziv() + "\" se ne može obrisati. Ima "
                     + brojStavki + " rezervacij" + (brojStavki == 1 ? "u" : "e")
-                    + " (prošlih ili budućih) koje se na nju oslanjaju.");
+                    + " (prošlih ili budućih) koje sadrže ovu salu.");
         }
 
         sale.deleteById(id);
@@ -102,7 +102,7 @@ public class SalaService {
 
     private Sala pronadjiIliBaciGresku(Long id) {
         return sale.findById(id)
-                .orElseThrow(() -> new ResursNijePronadjenException("Sala sa id " + id + " ne postoji."));
+                .orElseThrow(() -> new ResursNijePronadjenException("Sala ne postoji."));
     }
 
     private TipSale pronadjiTipSaleIliBaciGresku(TipSaleDto tipSaleDto) {
@@ -111,7 +111,7 @@ public class SalaService {
         }
         return tipoviSala.findById(tipSaleDto.getId())
                 .orElseThrow(() -> new ResursNijePronadjenException(
-                        "Tip sale sa id " + tipSaleDto.getId() + " ne postoji."));
+                        "Tip sale ne postoji."));
     }
 
 }

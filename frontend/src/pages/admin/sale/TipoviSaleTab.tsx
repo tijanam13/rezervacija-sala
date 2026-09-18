@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,15 @@ export function TipoviSaleTab({
     }
     return mapa;
   }, [sale]);
+
+  const [pretraga, setPretraga] = useState("");
+  const tipoviFiltrirani = useMemo(
+    () =>
+      tipovi.filter((t) =>
+        t.naziv.toLowerCase().includes(pretraga.toLowerCase()),
+      ),
+    [tipovi, pretraga],
+  );
 
   const [dijalogOtvoren, setDijalogOtvoren] = useState(false);
   const [kojiSeUredjuje, setKojiSeUredjuje] = useState<TipSaleDto | null>(null);
@@ -125,7 +134,19 @@ export function TipoviSaleTab({
 
   return (
     <>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="relative max-w-xs flex-1">
+          <Search
+            size={16}
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"
+          />
+          <Input
+            placeholder="Pretraži tip sale po nazivu..."
+            value={pretraga}
+            onChange={(e) => setPretraga(e.target.value)}
+            className="pl-9"
+          />
+        </div>
         <Button
           onClick={otvoriDodavanje}
           className="bg-fon-teal text-fon-dark hover:bg-fon-teal/90"
@@ -135,9 +156,11 @@ export function TipoviSaleTab({
         </Button>
       </div>
 
-      {tipovi.length === 0 ? (
+      {tipoviFiltrirani.length === 0 ? (
         <p className="py-10 text-center text-sm text-gray-500">
-          Nema tipova sala za prikaz.
+          {tipovi.length === 0
+            ? "Nema tipova sala za prikaz."
+            : "Nema tipova sala koji odgovaraju pretrazi."}
         </p>
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-100 bg-white">
@@ -151,7 +174,7 @@ export function TipoviSaleTab({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {tipovi.map((t) => (
+              {tipoviFiltrirani.map((t) => (
                 <tr key={t.id}>
                   <td className="px-4 py-3 font-medium text-fon-dark">
                     {t.naziv}
@@ -210,14 +233,19 @@ export function TipoviSaleTab({
           </DialogHeader>
 
           <div className="flex flex-col gap-3">
-            <Input
-              placeholder="Naziv tipa (npr. Amfiteatar)"
-              value={forma.naziv}
-              onChange={(e) =>
-                setForma((f) => ({ ...f, naziv: e.target.value }))
-              }
-              className="border-gray-200 bg-gray-50"
-            />
+            <div>
+              <label className="mb-1 block text-sm text-gray-600">
+                Naziv <span className="text-red-500">*</span>
+              </label>
+              <Input
+                placeholder="Naziv tipa (npr. Amfiteatar)"
+                value={forma.naziv}
+                onChange={(e) =>
+                  setForma((f) => ({ ...f, naziv: e.target.value }))
+                }
+                className="border-gray-200 bg-gray-50"
+              />
+            </div>
             <Input
               placeholder="Opis (opciono)"
               value={forma.opis}

@@ -12,6 +12,7 @@ export default function Prijava() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sesijaIstekla = searchParams.get("istekla") === "1";
+  const ulogaPromenjena = searchParams.get("uloga") === "1";
 
   const [email, setEmail] = useState("");
   const [lozinka, setLozinka] = useState("");
@@ -44,6 +45,16 @@ export default function Prijava() {
           <div className="flex items-start gap-2 rounded-lg border border-fon-blue/20 bg-fon-blue/5 p-3 text-sm text-fon-blue">
             <Info size={16} className="mt-0.5 shrink-0" />
             <span>Vaša sesija je istekla. Prijavite se ponovo.</span>
+          </div>
+        )}
+
+        {ulogaPromenjena && (
+          <div className="flex items-start gap-2 rounded-lg border border-fon-blue/20 bg-fon-blue/5 p-3 text-sm text-fon-blue">
+            <Info size={16} className="mt-0.5 shrink-0" />
+            <span>
+              Vaše uloge su promenjene. Prijavite se ponovo da bi izmena stupila
+              na snagu.
+            </span>
           </div>
         )}
 

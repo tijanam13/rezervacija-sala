@@ -44,4 +44,12 @@ public class ZvanjeRepository implements AppRepository<Zvanje, Long> {
         }
     }
 
+    public Optional<Zvanje> findByNaziv(String naziv) {
+        List<Zvanje> rez = entityManager.createQuery(
+                "SELECT z FROM Zvanje z WHERE z.naziv = :naziv", Zvanje.class)
+                .setParameter("naziv", naziv)
+                .getResultList();
+        return rez.isEmpty() ? Optional.empty() : Optional.of(rez.get(0));
+    }
+
 }

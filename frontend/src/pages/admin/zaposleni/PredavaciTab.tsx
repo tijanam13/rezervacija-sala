@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
-import { Pencil, Trash2, Mail, Phone, IdCard, Plus } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Mail,
+  Phone,
+  IdCard,
+  Plus,
+  Search,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -63,6 +71,17 @@ export function PredavaciTab({
   const katedreItems = useMemo(() => selectItemsOd(katedre), [katedre]);
   const zvanjaItems = useMemo(() => selectItemsOd(zvanja), [zvanja]);
 
+  const [pretraga, setPretraga] = useState("");
+  const predavaciFiltrirani = useMemo(() => {
+    const p = pretraga.toLowerCase();
+    return predavaci.filter(
+      (pr) =>
+        pr.ime.toLowerCase().includes(p) ||
+        pr.prezime.toLowerCase().includes(p) ||
+        (pr.poslovniEmail ?? "").toLowerCase().includes(p),
+    );
+  }, [predavaci, pretraga]);
+
   const [dijalogOtvoren, setDijalogOtvoren] = useState(false);
   const [kojiSeUredjuje, setKojiSeUredjuje] = useState<PredavacDto | null>(
     null,
@@ -99,10 +118,13 @@ export function PredavaciTab({
     if (
       !forma.ime.trim() ||
       !forma.prezime.trim() ||
+      !forma.poslovniEmail.trim() ||
       !forma.katedraId ||
       !forma.zvanjeId
     ) {
-      setFormaGreska("Ime, prezime, katedra i zvanje su obavezni podaci.");
+      setFormaGreska(
+        "Ime, prezime, poslovni email, katedra i zvanje su obavezni podaci.",
+      );
       return;
     }
 
@@ -175,7 +197,19 @@ export function PredavaciTab({
 
   return (
     <>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="relative max-w-xs flex-1">
+          <Search
+            size={16}
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"
+          />
+          <Input
+            placeholder="Pretraži predavača po imenu ili emailu..."
+            value={pretraga}
+            onChange={(e) => setPretraga(e.target.value)}
+            className="pl-9"
+          />
+        </div>
         <Button
           onClick={otvoriDodavanje}
           className="gap-1.5 bg-fon-teal text-fon-dark hover:bg-fon-teal/90"
@@ -185,9 +219,11 @@ export function PredavaciTab({
         </Button>
       </div>
 
-      {predavaci.length === 0 ? (
+      {predavaciFiltrirani.length === 0 ? (
         <p className="py-10 text-center text-sm text-gray-500">
-          Nema predavača za prikaz.
+          {predavaci.length === 0
+            ? "Nema predavača za prikaz."
+            : "Nema predavača koji odgovaraju pretrazi."}
         </p>
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-100 bg-white">
@@ -203,7 +239,7 @@ export function PredavaciTab({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {predavaci.map((p) => (
+              {predavaciFiltrirani.map((p) => (
                 <tr key={p.id}>
                   <td className="px-4 py-3 font-medium text-fon-dark">
                     {p.ime} {p.prezime}
@@ -284,22 +320,32 @@ export function PredavaciTab({
 
           <div className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto pr-1">
             <div className="grid grid-cols-2 gap-2">
-              <Input
-                placeholder="Ime"
-                value={forma.ime}
-                onChange={(e) =>
-                  setForma((f) => ({ ...f, ime: e.target.value }))
-                }
-                className="border-gray-200 bg-gray-50"
-              />
-              <Input
-                placeholder="Prezime"
-                value={forma.prezime}
-                onChange={(e) =>
-                  setForma((f) => ({ ...f, prezime: e.target.value }))
-                }
-                className="border-gray-200 bg-gray-50"
-              />
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">
+                  Ime <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  placeholder="Ime"
+                  value={forma.ime}
+                  onChange={(e) =>
+                    setForma((f) => ({ ...f, ime: e.target.value }))
+                  }
+                  className="border-gray-200 bg-gray-50"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">
+                  Prezime <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  placeholder="Prezime"
+                  value={forma.prezime}
+                  onChange={(e) =>
+                    setForma((f) => ({ ...f, prezime: e.target.value }))
+                  }
+                  className="border-gray-200 bg-gray-50"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Input
@@ -319,15 +365,20 @@ export function PredavaciTab({
                 className="border-gray-200 bg-gray-50"
               />
             </div>
-            <Input
-              type="email"
-              placeholder="Poslovni email"
-              value={forma.poslovniEmail}
-              onChange={(e) =>
-                setForma((f) => ({ ...f, poslovniEmail: e.target.value }))
-              }
-              className="border-gray-200 bg-gray-50"
-            />
+            <div>
+              <label className="mb-1 block text-sm text-gray-600">
+                Poslovni email <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="email"
+                placeholder="Poslovni email"
+                value={forma.poslovniEmail}
+                onChange={(e) =>
+                  setForma((f) => ({ ...f, poslovniEmail: e.target.value }))
+                }
+                className="border-gray-200 bg-gray-50"
+              />
+            </div>
             <Input
               placeholder="Titula (npr. Docent)"
               value={forma.titula}
@@ -344,42 +395,52 @@ export function PredavaciTab({
               }
               className="border-gray-200 bg-gray-50"
             />
-            <Select
-              items={katedreItems}
-              value={forma.katedraId}
-              onValueChange={(v) =>
-                v !== null && setForma((f) => ({ ...f, katedraId: v }))
-              }
-            >
-              <SelectTrigger className="w-full border-gray-200 bg-gray-50">
-                <SelectValue placeholder="Izaberi katedru" />
-              </SelectTrigger>
-              <SelectContent {...SELECT_PROPS}>
-                {katedre.map((k) => (
-                  <SelectItem key={k.id} value={String(k.id)}>
-                    {k.naziv}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              items={zvanjaItems}
-              value={forma.zvanjeId}
-              onValueChange={(v) =>
-                v !== null && setForma((f) => ({ ...f, zvanjeId: v }))
-              }
-            >
-              <SelectTrigger className="w-full border-gray-200 bg-gray-50">
-                <SelectValue placeholder="Izaberi zvanje" />
-              </SelectTrigger>
-              <SelectContent {...SELECT_PROPS}>
-                {zvanja.map((z) => (
-                  <SelectItem key={z.id} value={String(z.id)}>
-                    {z.naziv}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div>
+              <label className="mb-1 block text-sm text-gray-600">
+                Katedra <span className="text-red-500">*</span>
+              </label>
+              <Select
+                items={katedreItems}
+                value={forma.katedraId}
+                onValueChange={(v) =>
+                  v !== null && setForma((f) => ({ ...f, katedraId: v }))
+                }
+              >
+                <SelectTrigger className="w-full border-gray-200 bg-gray-50">
+                  <SelectValue placeholder="Izaberi katedru" />
+                </SelectTrigger>
+                <SelectContent {...SELECT_PROPS}>
+                  {katedre.map((k) => (
+                    <SelectItem key={k.id} value={String(k.id)}>
+                      {k.naziv}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm text-gray-600">
+                Zvanje <span className="text-red-500">*</span>
+              </label>
+              <Select
+                items={zvanjaItems}
+                value={forma.zvanjeId}
+                onValueChange={(v) =>
+                  v !== null && setForma((f) => ({ ...f, zvanjeId: v }))
+                }
+              >
+                <SelectTrigger className="w-full border-gray-200 bg-gray-50">
+                  <SelectValue placeholder="Izaberi zvanje" />
+                </SelectTrigger>
+                <SelectContent {...SELECT_PROPS}>
+                  {zvanja.map((z) => (
+                    <SelectItem key={z.id} value={String(z.id)}>
+                      {z.naziv}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             {formaGreska && (
               <div className="flex items-start gap-2 rounded-lg border border-fon-coral/30 bg-fon-coral/10 p-2.5 text-sm text-fon-coral">

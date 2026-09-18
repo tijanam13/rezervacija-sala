@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { danasnjiDatumLokalno, trenutnoVremeLokalno } from "@/lib/datumVreme";
 import type { SalaDto } from "@/types";
 
 const SELECT_PROPS = { side: "bottom" as const, alignItemWithTrigger: false };
@@ -23,9 +22,6 @@ const STAVKA_BOJE = [
 
 export interface StavkaForma {
   sala: string;
-  datum: string;
-  vremeOd: string;
-  vremeDo: string;
   brojOsoba: number;
   opis: string;
 }
@@ -33,9 +29,6 @@ export interface StavkaForma {
 export function praznaStavka(prvaSala: string): StavkaForma {
   return {
     sala: prvaSala,
-    datum: danasnjiDatumLokalno(),
-    vremeOd: "10:00",
-    vremeDo: "11:00",
     brojOsoba: 1,
     opis: "",
   };
@@ -61,7 +54,7 @@ export function StavkeRezervacije({
       <div className="mb-2 flex items-center justify-between">
         <label className="flex items-center gap-1.5 text-fon-navy">
           <MapPin size={18} className="text-fon-teal" />
-          Sale i termini
+          Sale (za isti termin)
         </label>
         <Button
           type="button"
@@ -108,6 +101,9 @@ export function StavkeRezervacije({
               </div>
 
               <div className="space-y-2">
+                <label className="mb-1 block text-xs text-fon-navy">
+                  Sala <span className="text-red-500">*</span>
+                </label>
                 <Select
                   value={s.sala}
                   onValueChange={(v) => {
@@ -135,78 +131,32 @@ export function StavkeRezervacije({
 
                 <div>
                   <label className="mb-1 block text-xs text-fon-navy">
-                    Datum
+                    Broj osoba <span className="text-red-500">*</span>
                   </label>
                   <Input
                     className="border-2 border-gray-500 text-fon-navy"
-                    type="date"
-                    min={danasnjiDatumLokalno()}
-                    value={s.datum}
-                    onChange={(e) => onAzuriraj(i, { datum: e.target.value })}
+                    type="number"
+                    min={1}
+                    max={maxOsoba}
+                    value={s.brojOsoba}
+                    onChange={(e) => {
+                      const vrednost = Math.min(
+                        Number(e.target.value) || 1,
+                        maxOsoba,
+                      );
+                      onAzuriraj(i, { brojOsoba: vrednost });
+                    }}
                   />
-                </div>
-
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <label className="mb-1 block text-xs text-fon-navy">
-                      Vreme od
-                    </label>
-                    <Input
-                      className="border-2 border-gray-500 text-fon-navy"
-                      type="time"
-                      min={
-                        s.datum === danasnjiDatumLokalno()
-                          ? trenutnoVremeLokalno()
-                          : undefined
-                      }
-                      value={s.vremeOd}
-                      onChange={(e) =>
-                        onAzuriraj(i, { vremeOd: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="mb-1 block text-xs text-fon-navy">
-                      Vreme do
-                    </label>
-                    <Input
-                      className="border-2 border-gray-500 text-fon-navy"
-                      type="time"
-                      value={s.vremeDo}
-                      onChange={(e) =>
-                        onAzuriraj(i, { vremeDo: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="mb-1 block text-xs text-fon-navy">
-                      Broj osoba
-                    </label>
-                    <Input
-                      className="border-2 border-gray-500 text-fon-navy"
-                      type="number"
-                      min={1}
-                      max={maxOsoba}
-                      value={s.brojOsoba}
-                      onChange={(e) => {
-                        const vrednost = Math.min(
-                          Number(e.target.value) || 1,
-                          maxOsoba,
-                        );
-                        onAzuriraj(i, { brojOsoba: vrednost });
-                      }}
-                    />
-                    {izabranaSala && (
-                      <p className="mt-1 text-xs text-gray-400">
-                        Kapacitet sale: {izabranaSala.kapacitet}
-                      </p>
-                    )}
-                  </div>
+                  {izabranaSala && (
+                    <p className="mt-1 text-xs text-gray-400">
+                      Kapacitet sale: {izabranaSala.kapacitet}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="mb-1 block text-xs text-fon-navy">
-                    Napomena za ovu salu/termin (opciono)
+                    Napomena za ovu salu (opciono)
                   </label>
                   <Input
                     className="border-2 border-gray-500 text-fon-navy"

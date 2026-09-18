@@ -150,9 +150,6 @@ export type SvrhaRezervacijeDto =
 
 export interface StavkaRezervacijeDto {
   id?: number;
-  datumTermina: string;
-  vremeOd: string;
-  vremeDo: string;
   brojOsoba: number;
   statusStavke?: StatusStavke;
   opis?: string;
@@ -163,6 +160,9 @@ export interface StavkaRezervacijeDto {
 export interface RezervacijaDto {
   id?: number;
   datumKreiranja?: string;
+  datumTermina: string;
+  vremeOd: string;
+  vremeDo: string;
   status?: StatusRezervacije;
   napomena?: string;
   korisnik?: KorisnikDto;
@@ -190,4 +190,6 @@ export interface ZauzetostDto {
   vremeOd: string;
   vremeDo: string;
   statusStavke: "NA_CEKANJU" | "ODOBRENA";
+  brojOsoba: number;
+  naziv: string;
 }

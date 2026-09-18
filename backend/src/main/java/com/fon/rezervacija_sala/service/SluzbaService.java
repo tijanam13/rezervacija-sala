@@ -3,6 +3,7 @@ package com.fon.rezervacija_sala.service;
 import com.fon.rezervacija_sala.dto.SluzbaDto;
 import com.fon.rezervacija_sala.entity.Sluzba;
 import com.fon.rezervacija_sala.exception.BrisanjeNijeMoguceException;
+import com.fon.rezervacija_sala.exception.NazivZauzetException;
 import com.fon.rezervacija_sala.exception.ResursNijePronadjenException;
 import com.fon.rezervacija_sala.mapper.impl.SluzbaMapper;
 import com.fon.rezervacija_sala.repository.impl.SluzbaRepository;
@@ -34,6 +35,7 @@ public class SluzbaService {
 
     @Transactional
     public SluzbaDto create(SluzbaDto dto) {
+        proveriDaNazivNijeZauzet(dto.getNaziv(), null);
         Sluzba s = mapper.toEntity(dto);
         s.setId(null);
         sluzbe.save(s);
@@ -44,6 +46,7 @@ public class SluzbaService {
     @Transactional
     public SluzbaDto update(Long id, SluzbaDto dto) {
         Sluzba postojeca = pronadjiIliBaciGresku(id);
+        proveriDaNazivNijeZauzet(dto.getNaziv(), id);
         postojeca.setNaziv(dto.getNaziv());
         postojeca.setOpis(dto.getOpis());
         sluzbe.save(postojeca);
@@ -68,7 +71,15 @@ public class SluzbaService {
 
     private Sluzba pronadjiIliBaciGresku(Long id) {
         return sluzbe.findById(id)
-                .orElseThrow(() -> new ResursNijePronadjenException("Služba sa id " + id + " ne postoji."));
+                .orElseThrow(() -> new ResursNijePronadjenException("Služba ne postoji."));
+    }
+
+    private void proveriDaNazivNijeZauzet(String naziv, Long trenutniId) {
+        sluzbe.findByNaziv(naziv).ifPresent(postojeca -> {
+            if (!postojeca.getId().equals(trenutniId)) {
+                throw new NazivZauzetException("Služba sa ovim nazivom već postoji.");
+            }
+        });
     }
 
 }

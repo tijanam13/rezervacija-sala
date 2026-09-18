@@ -42,6 +42,7 @@ public class SluzbenikService {
     @Transactional
     public SluzbenikDto create(SluzbenikDto dto) {
         Sluzba sluzba = pronadjiSluzbuIliBaciGresku(dto.getSluzba());
+        proveriDaPoslovniEmailNijeZauzet(dto.getPoslovniEmail(), null);
 
         Sluzbenik s = new Sluzbenik();
         s.setIme(dto.getIme());
@@ -61,6 +62,7 @@ public class SluzbenikService {
     public SluzbenikDto update(Long id, SluzbenikDto dto) {
         Sluzbenik postojeci = pronadjiIliBaciGresku(id);
         Sluzba sluzba = pronadjiSluzbuIliBaciGresku(dto.getSluzba());
+        proveriDaPoslovniEmailNijeZauzet(dto.getPoslovniEmail(), id);
 
         postojeci.setIme(dto.getIme());
         postojeci.setPrezime(dto.getPrezime());
@@ -81,7 +83,7 @@ public class SluzbenikService {
 
         if (korisnici.findByZaposleniId(id).isPresent()) {
             throw new BrisanjeNijeMoguceException(
-                    "Službenik (id: " + id + ") ima povezan korisnički nalog za prijavu. "
+                    "Službenik ima povezan korisnički nalog za prijavu. "
                     + "Nalog se ne može obrisati, pa se ni ovaj profil ne može obrisati. "
                     + "Nalog se može samo blokirati.");
         }
@@ -92,7 +94,16 @@ public class SluzbenikService {
 
     private Sluzbenik pronadjiIliBaciGresku(Long id) {
         return sluzbenici.findById(id)
-                .orElseThrow(() -> new ResursNijePronadjenException("Službenik sa id " + id + " ne postoji."));
+                .orElseThrow(() -> new ResursNijePronadjenException("Službenik ne postoji."));
+    }
+
+    private void proveriDaPoslovniEmailNijeZauzet(String poslovniEmail, Long idSluzbenikaKojiSeMenja) {
+        sluzbenici.findByPoslovniEmail(poslovniEmail)
+                .filter(postojeci -> !postojeci.getId().equals(idSluzbenikaKojiSeMenja))
+                .ifPresent(postojeci -> {
+                    throw new NevalidanZahtevException(
+                            "Poslovni email \"" + poslovniEmail + "\" je već dodeljen drugom službeniku.");
+                });
     }
 
     private Sluzba pronadjiSluzbuIliBaciGresku(SluzbaDto sluzbaDto) {
@@ -100,8 +111,7 @@ public class SluzbenikService {
             throw new NevalidanZahtevException("Služba mora biti prosleđena.");
         }
         return sluzbe.findById(sluzbaDto.getId())
-                .orElseThrow(() -> new ResursNijePronadjenException(
-                        "Služba sa id " + sluzbaDto.getId() + " ne postoji."));
+                .orElseThrow(() -> new ResursNijePronadjenException("Služba ne postoji."));
     }
 
 }

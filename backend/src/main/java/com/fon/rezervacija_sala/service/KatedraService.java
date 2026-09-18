@@ -3,6 +3,7 @@ package com.fon.rezervacija_sala.service;
 import com.fon.rezervacija_sala.dto.KatedraDto;
 import com.fon.rezervacija_sala.entity.Katedra;
 import com.fon.rezervacija_sala.exception.BrisanjeNijeMoguceException;
+import com.fon.rezervacija_sala.exception.NazivZauzetException;
 import com.fon.rezervacija_sala.exception.ResursNijePronadjenException;
 import com.fon.rezervacija_sala.mapper.impl.KatedraMapper;
 import com.fon.rezervacija_sala.repository.impl.KatedraRepository;
@@ -34,6 +35,7 @@ public class KatedraService {
 
     @Transactional
     public KatedraDto create(KatedraDto dto) {
+        proveriDaNazivNijeZauzet(dto.getNaziv(), null);
         Katedra k = mapper.toEntity(dto);
         k.setId(null); 
         katedre.save(k);
@@ -44,6 +46,7 @@ public class KatedraService {
     @Transactional
     public KatedraDto update(Long id, KatedraDto dto) {
         Katedra postojeca = pronadjiIliBaciGresku(id);
+        proveriDaNazivNijeZauzet(dto.getNaziv(), id);
         postojeca.setNaziv(dto.getNaziv());
         postojeca.setOpis(dto.getOpis());
         katedre.save(postojeca);
@@ -68,7 +71,15 @@ public class KatedraService {
 
     private Katedra pronadjiIliBaciGresku(Long id) {
         return katedre.findById(id)
-                .orElseThrow(() -> new ResursNijePronadjenException("Katedra sa id " + id + " ne postoji."));
+                .orElseThrow(() -> new ResursNijePronadjenException("Katedra ne postoji."));
+    }
+
+    private void proveriDaNazivNijeZauzet(String naziv, Long trenutniId) {
+        katedre.findByNaziv(naziv).ifPresent(postojeca -> {
+            if (!postojeca.getId().equals(trenutniId)) {
+                throw new NazivZauzetException("Katedra sa ovim nazivom već postoji.");
+            }
+        });
     }
 
 }

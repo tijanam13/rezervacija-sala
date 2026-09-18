@@ -19,7 +19,7 @@ import {
   promeniStatusNaloga,
 } from "@/lib/korisnikApi";
 import { izvuciPorukuGreske } from "@/lib/rezervacijaApi";
-import { preuzmiKorisnika } from "@/lib/auth";
+import { preuzmiKorisnika, odjaviSe } from "@/lib/auth";
 import type { KorisnikDto } from "@/types";
 
 const VELICINA_STRANICE = 6;
@@ -74,6 +74,10 @@ export default function Korisnici() {
     setGreska(null);
     try {
       const azuriran = await akcija();
+      if (id === preuzmiKorisnika()?.id) {
+        odjaviSe("uloga-promenjena");
+        return;
+      }
       setKorisnici((prethodni) =>
         prethodni.map((k) => (k.id === id ? azuriran : k)),
       );
@@ -157,133 +161,129 @@ export default function Korisnici() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {korisnici
-                  .filter((k) => k.id !== preuzmiKorisnika()?.id)
-                  .map((korisnik) => {
-                    const jeAdminVec = korisnik.uloge.includes("ADMIN");
-                    const jeKoordinatorVec =
-                      korisnik.uloge.includes("KOORDINATOR");
-                    const jeBlokiran = korisnik.status === "BLOKIRAN";
-                    const uAkciji = akcijaUToku === korisnik.id;
+                {korisnici.map((korisnik) => {
+                  const jeAdminVec = korisnik.uloge.includes("ADMIN");
+                  const jeKoordinatorVec =
+                    korisnik.uloge.includes("KOORDINATOR");
+                  const jeBlokiran = korisnik.status === "BLOKIRAN";
+                  const uAkciji = akcijaUToku === korisnik.id;
 
-                    return (
-                      <tr key={korisnik.id}>
-                        <td className="px-4 py-3 font-medium text-fon-dark">
-                          {korisnik.ime} {korisnik.prezime}
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">
-                          {korisnik.email}
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">
-                          {korisnik.tipKorisnika === "PREDAVAC"
-                            ? "Predavač"
-                            : "Službenik"}
-                        </td>
-                        <td className="px-4 py-3">
-                          {prikazStatusa(korisnik.status)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap gap-1">
-                            {korisnik.uloge.length === 0 ? (
-                              <span className="text-xs text-gray-400">—</span>
-                            ) : (
-                              korisnik.uloge.map((uloga) => (
-                                <Badge
-                                  key={uloga}
-                                  className="bg-fon-blue/10 text-fon-blue"
-                                >
-                                  {uloga === "ADMIN"
-                                    ? "Administrator"
-                                    : "Koordinator"}
-                                </Badge>
-                              ))
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap gap-1.5">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className={
+                  return (
+                    <tr key={korisnik.id}>
+                      <td className="px-4 py-3 font-medium text-fon-dark">
+                        {korisnik.ime} {korisnik.prezime}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {korisnik.email}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {korisnik.tipKorisnika === "PREDAVAC"
+                          ? "Predavač"
+                          : "Službenik"}
+                      </td>
+                      <td className="px-4 py-3">
+                        {prikazStatusa(korisnik.status)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {korisnik.uloge.length === 0 ? (
+                            <span className="text-xs text-gray-400">—</span>
+                          ) : (
+                            korisnik.uloge.map((uloga) => (
+                              <Badge
+                                key={uloga}
+                                className="bg-fon-blue/10 text-fon-blue"
+                              >
+                                {uloga === "ADMIN"
+                                  ? "Administrator"
+                                  : "Koordinator"}
+                              </Badge>
+                            ))
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className={
+                              jeKoordinatorVec
+                                ? "border-fon-blue/30 bg-fon-blue/10 text-fon-blue hover:bg-fon-blue/20"
+                                : "border-fon-blue/30 text-fon-blue hover:bg-fon-blue/10"
+                            }
+                            disabled={uAkciji}
+                            onClick={() =>
+                              obradiAkciju(korisnik.id, () =>
                                 jeKoordinatorVec
-                                  ? "border-fon-blue/30 bg-fon-blue/10 text-fon-blue hover:bg-fon-blue/20"
-                                  : "border-fon-blue/30 text-fon-blue hover:bg-fon-blue/10"
-                              }
-                              disabled={uAkciji}
-                              onClick={() =>
-                                obradiAkciju(korisnik.id, () =>
-                                  jeKoordinatorVec
-                                    ? oduzmiUlogu(korisnik.id, "KOORDINATOR")
-                                    : dodeliUlogu(korisnik.id, "KOORDINATOR"),
-                                )
-                              }
-                            >
-                              {jeKoordinatorVec ? (
-                                <ShieldOff size={14} />
-                              ) : (
-                                <ShieldCheck size={14} />
-                              )}
-                              {jeKoordinatorVec
-                                ? "Oduzmi koordinatora"
-                                : "Postavi za koordinatora"}
-                            </Button>
+                                  ? oduzmiUlogu(korisnik.id, "KOORDINATOR")
+                                  : dodeliUlogu(korisnik.id, "KOORDINATOR"),
+                              )
+                            }
+                          >
+                            {jeKoordinatorVec ? (
+                              <ShieldOff size={14} />
+                            ) : (
+                              <ShieldCheck size={14} />
+                            )}
+                            {jeKoordinatorVec
+                              ? "Oduzmi koordinatora"
+                              : "Postavi za koordinatora"}
+                          </Button>
 
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className={
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className={
+                              jeAdminVec
+                                ? "border-fon-blue/30 bg-fon-blue/10 text-fon-blue hover:bg-fon-blue/20"
+                                : "border-fon-blue/30 text-fon-blue hover:bg-fon-blue/10"
+                            }
+                            disabled={uAkciji}
+                            onClick={() =>
+                              obradiAkciju(korisnik.id, () =>
                                 jeAdminVec
-                                  ? "border-fon-blue/30 bg-fon-blue/10 text-fon-blue hover:bg-fon-blue/20"
-                                  : "border-fon-blue/30 text-fon-blue hover:bg-fon-blue/10"
-                              }
-                              disabled={uAkciji}
-                              onClick={() =>
-                                obradiAkciju(korisnik.id, () =>
-                                  jeAdminVec
-                                    ? oduzmiUlogu(korisnik.id, "ADMIN")
-                                    : dodeliUlogu(korisnik.id, "ADMIN"),
-                                )
-                              }
-                            >
-                              {jeAdminVec ? (
-                                <ShieldOff size={14} />
-                              ) : (
-                                <ShieldCheck size={14} />
-                              )}
-                              {jeAdminVec
-                                ? "Oduzmi admina"
-                                : "Postavi za admina"}
-                            </Button>
+                                  ? oduzmiUlogu(korisnik.id, "ADMIN")
+                                  : dodeliUlogu(korisnik.id, "ADMIN"),
+                              )
+                            }
+                          >
+                            {jeAdminVec ? (
+                              <ShieldOff size={14} />
+                            ) : (
+                              <ShieldCheck size={14} />
+                            )}
+                            {jeAdminVec ? "Oduzmi admina" : "Postavi za admina"}
+                          </Button>
 
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className={
-                                jeBlokiran ? "text-fon-teal" : "text-fon-coral"
-                              }
-                              disabled={uAkciji}
-                              onClick={() =>
-                                obradiAkciju(korisnik.id, () =>
-                                  promeniStatusNaloga(
-                                    korisnik.id,
-                                    jeBlokiran ? "AKTIVAN" : "BLOKIRAN",
-                                  ),
-                                )
-                              }
-                            >
-                              {jeBlokiran ? (
-                                <CheckCircle2 size={14} />
-                              ) : (
-                                <Ban size={14} />
-                              )}
-                              {jeBlokiran ? "Odblokiraj" : "Blokiraj"}
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className={
+                              jeBlokiran ? "text-fon-teal" : "text-fon-coral"
+                            }
+                            disabled={uAkciji}
+                            onClick={() =>
+                              obradiAkciju(korisnik.id, () =>
+                                promeniStatusNaloga(
+                                  korisnik.id,
+                                  jeBlokiran ? "AKTIVAN" : "BLOKIRAN",
+                                ),
+                              )
+                            }
+                          >
+                            {jeBlokiran ? (
+                              <CheckCircle2 size={14} />
+                            ) : (
+                              <Ban size={14} />
+                            )}
+                            {jeBlokiran ? "Odblokiraj" : "Blokiraj"}
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

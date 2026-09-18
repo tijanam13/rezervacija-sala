@@ -38,9 +38,9 @@ export default function ZaboravljenaLozinka() {
             <CheckCircle2 size={28} className="text-fon-teal" />
           </div>
           <p className="text-sm text-gray-600">
-            Ako nalog sa adresom{" "}
+            Ukoliko nalog sa adresom{" "}
             <span className="font-medium text-fon-dark">{email}</span> postoji,
-            poslali smo link za promenu lozinke. Link važi 30 minuta.
+            link za promenu lozinke je poslat. Link važi 30 minuta.
           </p>
           <Link to="/prijava">
             <Button className="w-full bg-fon-teal text-fon-dark">
